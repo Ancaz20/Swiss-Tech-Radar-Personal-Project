@@ -8,11 +8,10 @@ services:
       - .env
     environment:
       FLASK_SECRET_KEY: ${FLASK_SECRET_KEY:-dev_secret_key}
-      FLASK_ENV: production
-      # Database URL for PostgreSQL (service `db` defined below)
-      DATABASE_URL: ${DATABASE_URL:-postgresql://postgres:example@db:5432/swiss}
-      ADZUNA_APP_ID: ${ADZUNA_APP_ID}
-      ADZUNA_APP_KEY: ${ADZUNA_APP_KEY}
+      FLASK_ENV: ${FLASK_ENV:-development}
+      DATABASE_URL: ${DATABASE_URL:-sqlite:////app/swiss_tech_radar.db}
+      ADZUNA_APP_ID: ${ADZUNA_APP_ID:-}
+      ADZUNA_APP_KEY: ${ADZUNA_APP_KEY:-}
     volumes:
       - .:/app
     depends_on:

@@ -1,3 +1,9 @@
 Flask>=2.0
 gunicorn>=20.0
 psycopg2-binary>=2.9
+SQLAlchemy>=2.0
+beautifulsoup4>=4.12
+pytest>=8.0
+pytest-cov>=4.0
+ruff>=0.6
+black>=24.0
