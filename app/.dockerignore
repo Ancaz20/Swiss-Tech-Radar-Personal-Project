@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+*.sqlite
+*.db
+*.db-journal
+__pycache__/
+*.log
+dist/
+build/
+.git

@@ -1,3 +1,39 @@
+# Python artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+
+# Environment files
+.env
+.env.local
+
+# SQLite and DB files
+*.db
+*.sqlite
+swiss_tech_radar.db
+*.db-journal
+
+# Logs
+*.log
+
+# Editor/IDE
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Docker
+docker-compose.override.yml
+
+# Misc
+node_modules/
 .venv/
 __pycache__/
 *.pyc
