@@ -1,10 +1,13 @@
 import os
+import hmac
+import secrets
 import sqlite3
 import psycopg2
 import subprocess
 import sys
 import time
-from flask import Flask, render_template, redirect, url_for, flash, request
+import re
+from flask import Flask, render_template, redirect, url_for, flash, request, session
 
 app = Flask(__name__)
 
@@ -21,7 +24,7 @@ if not _secret_key:
         )
 app.secret_key = _secret_key
 
-ROOT_DIR = os.path.dirname(os.path.dirname(__file__))
+ROOT_DIR = os.environ.get("PROJECT_ROOT", os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 DB_PATH = os.path.join(ROOT_DIR, "swiss_tech_radar.db")
 INGEST_SCRIPT = os.path.join(ROOT_DIR, "ingest.py")
 REFRESH_TIMEOUT_SECONDS = 120  # evita que un ingest colgado bloquee la app para siempre
@@ -36,7 +39,7 @@ SUPPORTED_LANGUAGES = {
     "fr": "Français",
 }
 DEFAULT_LANG = "es"
-SUPPORTED_SORTS = {"date", "location", "company", "skills"}
+SUPPORTED_SORTS = {"date", "location", "company", "skills", "match"}
 DEFAULT_SORT = "date"
 
 TRANSLATIONS = {
@@ -73,6 +76,8 @@ TRANSLATIONS = {
         "sort_location_label": "Location",
         "sort_company_label": "Company",
         "sort_skills_label": "Shared skills",
+        "sort_match_label": "Best profile match",
+        "match_score_label": "Profile match",
     },
     "es": {
         "page_title": "Radar Tecnológico Suiza",
@@ -107,6 +112,8 @@ TRANSLATIONS = {
         "sort_location_label": "Ubicación",
         "sort_company_label": "Empresa",
         "sort_skills_label": "Skills en común",
+        "sort_match_label": "Mayor compatibilidad",
+        "match_score_label": "Compatibilidad con tu perfil",
     },
     "de": {
         "page_title": "Swiss Tech Radar",
@@ -141,6 +148,8 @@ TRANSLATIONS = {
         "sort_location_label": "Ort",
         "sort_company_label": "Firma",
         "sort_skills_label": "Gemeinsame Skills",
+        "sort_match_label": "Beste Profilübereinstimmung",
+        "match_score_label": "Profilübereinstimmung",
     },
     "fr": {
         "page_title": "Swiss Tech Radar",
@@ -175,6 +184,8 @@ TRANSLATIONS = {
         "sort_location_label": "Lieu",
         "sort_company_label": "Entreprise",
         "sort_skills_label": "Compétences partagées",
+        "sort_match_label": "Meilleure compatibilité",
+        "match_score_label": "Compatibilité avec votre profil",
     },
 }
 
@@ -193,6 +204,398 @@ def get_translations(lang):
     return TRANSLATIONS.get(lang, TRANSLATIONS[DEFAULT_LANG])
 
 
+APPLICATION_STATUSES = {
+    "saved": "Guardada",
+    "applied": "Solicitada",
+    "interview": "Entrevista",
+    "offer": "Oferta recibida",
+    "rejected": "Descartada",
+    "archived": "Archivada",
+}
+DEFAULT_PROFILE_SKILLS = "java,spring,python,sql,postgresql,docker,aws,azure,typescript,react,git"
+
+
+def get_profile_skills():
+    configured = os.environ.get("PROFILE_SKILLS", DEFAULT_PROFILE_SKILLS)
+    return {skill.strip().lower() for skill in configured.split(",") if skill.strip()}
+
+
+def calculate_match_score(job_skills, profile_skills=None):
+    """Backward-compatible skill-only score helper."""
+    if isinstance(job_skills, str):
+        skills = {item.strip().lower() for item in job_skills.split(",") if item.strip()}
+    else:
+        skills = {str(item).strip().lower() for item in (job_skills or []) if str(item).strip()}
+    profile = profile_skills if profile_skills is not None else get_profile_skills()
+    profile = {str(item).strip().lower() for item in profile if str(item).strip()}
+    matched = sorted(skills & profile)
+    if not skills or not profile:
+        return 0, matched
+    denominator = max(3, min(6, len(skills)))
+    return min(100, round(len(matched) * 100 / denominator)), matched
+
+
+LEVEL_RANK = {"A1": 1, "A2": 2, "B1": 3, "B2": 4, "C1": 5, "C2": 6, "NATIVE": 7}
+LANGUAGE_ALIASES = {
+    "english": ("english", "anglais", "englisch"),
+    "french": ("french", "français", "francais", "französisch", "franzosisch"),
+    "german": ("german", "deutsch", "allemand"),
+    "spanish": ("spanish", "español", "espanol", "spanisch"),
+    "italian": ("italian", "italien", "italienisch"),
+}
+DEFAULT_PROFILE_LANGUAGES = "spanish:native,english:C1,french:B1,german:A1"
+DEFAULT_TARGET_CONTRACTS = {"internship", "permanent", "temporary", "part-time"}
+
+
+def get_profile_languages():
+    configured = os.environ.get("PROFILE_LANGUAGES", DEFAULT_PROFILE_LANGUAGES)
+    result = {}
+    for item in configured.split(","):
+        if ":" not in item:
+            continue
+        language, level = item.split(":", 1)
+        language = language.strip().lower()
+        level = level.strip().upper()
+        if language and level in LEVEL_RANK:
+            result[language] = level
+    return result
+
+
+def get_profile_experience_years():
+    try:
+        return max(0, float(os.environ.get("PROFILE_EXPERIENCE_YEARS", "0")))
+    except ValueError:
+        return 0.0
+
+
+def detect_language_requirements(text):
+    lowered = (text or "").lower()
+    requirements = {}
+    for language, aliases in LANGUAGE_ALIASES.items():
+        for alias in aliases:
+            escaped = re.escape(alias)
+            patterns = (
+                rf"\b{escaped}\b[^.;\n]{{0,35}}\b(a[12]|b[12]|c[12]|native)\b",
+                rf"\b(a[12]|b[12]|c[12]|native)\b[^.;\n]{{0,25}}\b{escaped}\b",
+            )
+            for pattern in patterns:
+                match = re.search(pattern, lowered, re.IGNORECASE)
+                if match:
+                    level = match.group(1).upper()
+                    requirements[language] = level
+                    break
+            if language in requirements:
+                break
+    return requirements
+
+
+def calculate_language_score(text):
+    requirements = detect_language_requirements(text)
+    profile = get_profile_languages()
+    if not requirements:
+        return 75, [], False
+    details = []
+    scores = []
+    for language, required_level in requirements.items():
+        actual = profile.get(language)
+        if actual is None:
+            score = 0
+            detail = f"{language}: no indicado en tu perfil (se exige {required_level})"
+        else:
+            gap = LEVEL_RANK[required_level] - LEVEL_RANK[actual]
+            score = 100 if gap <= 0 else max(0, 100 - gap * 25)
+            detail = f"{language}: tu nivel {actual}, requisito {required_level}"
+        scores.append(score)
+        details.append(detail)
+    return round(sum(scores) / len(scores)), details, True
+
+
+def calculate_experience_score(job):
+    text = f"{job.get('title', '')} {job.get('description', '')}".lower()
+    profile_years = get_profile_experience_years()
+    years = [float(value) for value in re.findall(
+        r"\b(\d+(?:\.\d+)?)\s*\+?\s*(?:years?|yrs?)\b", text
+    )]
+    if years:
+        required = min(years)
+        score = 100 if required <= profile_years else max(0, 100 - (required - profile_years) * 30)
+        return round(score), f"Experiencia solicitada: {required:g} años; perfil configurado: {profile_years:g}", True
+    title = (job.get("title") or "").lower()
+    if re.search(r"\b(senior|principal|staff engineer|lead engineer|head of)\b", title):
+        return 10, "El título parece orientado a un perfil senior", True
+    if re.search(r"\b(intern|internship|praktikum|stage|trainee|graduate|junior|entry.level|apprentice)\b", text):
+        return 100, "El anuncio menciona prácticas o nivel inicial", True
+    if re.search(r"\b(mid.level|intermediate)\b", text):
+        return 45, "El anuncio parece de nivel intermedio", True
+    return 75, "El anuncio no especifica claramente la experiencia", False
+
+
+def calculate_contract_score(job):
+    contract = (job.get("contract_type") or "").lower()
+    text = f"{job.get('title', '')} {job.get('description', '')} {contract}".lower()
+    if re.search(r"\b(internship|intern|praktikum|stage|trainee|apprenticeship|apprentice)\b", text):
+        return 100, "Prácticas o formación remunerada identificadas", True
+    if re.search(r"\b(freelance|self.employed|independent contractor)\b", text):
+        return 35, "Modalidad freelance: menor prioridad en el perfil actual", True
+    if re.search(r"\b(part.time|part time|temps partiel|teilzeit)\b", text):
+        return 90, "Jornada parcial identificada", True
+    if re.search(r"\b(temporary|fixed.term|fixed term|temporaire|befristet)\b", text):
+        return 80, "Contrato temporal identificado", True
+    if re.search(r"\b(permanent|full.time|full time|cdi|unbefristet)\b", text):
+        return 85, "Contrato estable o jornada completa identificados", True
+    return 75, "El anuncio no especifica claramente el tipo de contrato", False
+
+
+def calculate_job_match(job):
+    """Weighted fit estimate: skills 45%, languages 25%, experience 20%, contract 10%."""
+    skills_score, matched = calculate_match_score(job.get("skills", ""))
+    text = f"{job.get('title', '')} {job.get('description', '')}"
+    language_score, language_notes, language_known = calculate_language_score(text)
+    experience_score, experience_note, experience_known = calculate_experience_score(job)
+    contract_score, contract_note, contract_known = calculate_contract_score(job)
+    weighted = (
+        skills_score * 0.45
+        + language_score * 0.25
+        + experience_score * 0.20
+        + contract_score * 0.10
+    )
+    known = sum((bool(job.get("skills")), language_known, experience_known, contract_known))
+    return {
+        "score": round(weighted),
+        "matched_skills": matched,
+        "breakdown": {
+            "skills": skills_score,
+            "languages": language_score,
+            "experience": experience_score,
+            "contract": contract_score,
+        },
+        "details": {
+            "skills": ", ".join(matched) if matched else "No se detectan coincidencias tecnológicas",
+            "languages": "; ".join(language_notes) if language_notes else "No se detecta un nivel lingüístico exigido",
+            "experience": experience_note,
+            "contract": contract_note,
+        },
+        "confidence": round(known / 4 * 100),
+    }
+
+
+def ensure_applications_table(conn, is_postgres):
+    if is_postgres:
+        # The managed PostgreSQL database starts empty. Create the core job
+        # tables before creating applications, whose foreign key references jobs.
+        cur = conn.cursor()
+        cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS jobs (
+                id SERIAL PRIMARY KEY,
+                adzuna_id TEXT UNIQUE NOT NULL,
+                title TEXT,
+                company TEXT,
+                location TEXT,
+                salary_min DOUBLE PRECISION,
+                salary_max DOUBLE PRECISION,
+                contract_type TEXT,
+                created TEXT,
+                redirect_url TEXT,
+                description TEXT,
+                source TEXT NOT NULL DEFAULT 'adzuna'
+            );
+            CREATE TABLE IF NOT EXISTS skills (
+                id SERIAL PRIMARY KEY,
+                name TEXT UNIQUE NOT NULL
+            );
+            CREATE TABLE IF NOT EXISTS job_skills (
+                job_id INTEGER NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+                skill_id INTEGER NOT NULL REFERENCES skills(id) ON DELETE CASCADE,
+                PRIMARY KEY (job_id, skill_id)
+            );
+            CREATE TABLE IF NOT EXISTS applications (
+                job_id INTEGER PRIMARY KEY REFERENCES jobs(id) ON DELETE CASCADE,
+                status TEXT NOT NULL CHECK (
+                    status IN ('saved', 'applied', 'interview', 'offer', 'rejected', 'archived')
+                ),
+                notes TEXT NOT NULL DEFAULT '',
+                created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                applied_at TIMESTAMP NULL
+            );
+            """
+        )
+        cur.execute("ALTER TABLE jobs ADD COLUMN IF NOT EXISTS source TEXT NOT NULL DEFAULT 'adzuna'")
+        conn.commit()
+        cur.close()
+        return
+
+    columns = {row[1] for row in conn.execute("PRAGMA table_info(jobs)").fetchall()}
+    if "source" not in columns:
+        conn.execute("ALTER TABLE jobs ADD COLUMN source TEXT NOT NULL DEFAULT 'adzuna'")
+    sql = """
+        CREATE TABLE IF NOT EXISTS applications (
+            job_id INTEGER PRIMARY KEY REFERENCES jobs(id) ON DELETE CASCADE,
+            status TEXT NOT NULL CHECK (
+                status IN ('saved', 'applied', 'interview', 'offer', 'rejected', 'archived')
+            ),
+            notes TEXT NOT NULL DEFAULT '',
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            applied_at TIMESTAMP NULL
+        )
+    """
+    conn.execute(sql)
+    conn.commit()
+
+
+def get_app_database():
+    database_url = os.environ.get("DATABASE_URL", "").strip()
+    if database_url:
+        conn = psycopg2.connect(database_url)
+        ensure_applications_table(conn, True)
+        return conn, True
+    if not os.path.exists(DB_PATH):
+        return None, False
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA foreign_keys = ON")
+    ensure_applications_table(conn, False)
+    return conn, False
+
+
+def save_application(job_id, status="saved", notes=""):
+    if status not in APPLICATION_STATUSES:
+        raise ValueError("Estado de candidatura no válido.")
+    notes = (notes or "").strip()
+    if len(notes) > 4000:
+        raise ValueError("Las notas no pueden superar los 4000 caracteres.")
+    conn, is_postgres = get_app_database()
+    if conn is None:
+        raise LookupError("No existe todavía una base de datos con ofertas.")
+    try:
+        if is_postgres:
+            cur = conn.cursor()
+            cur.execute("""
+                INSERT INTO applications (job_id, status, notes, applied_at)
+                SELECT id, %s, %s, CASE WHEN %s = 'applied' THEN CURRENT_TIMESTAMP ELSE NULL END
+                FROM jobs WHERE id = %s
+                ON CONFLICT (job_id) DO UPDATE SET
+                    status = EXCLUDED.status,
+                    notes = EXCLUDED.notes,
+                    updated_at = CURRENT_TIMESTAMP,
+                    applied_at = COALESCE(
+                        applications.applied_at,
+                        CASE WHEN EXCLUDED.status = 'applied' THEN CURRENT_TIMESTAMP ELSE NULL END
+                    )
+                RETURNING job_id
+            """, (status, notes, status, job_id))
+            result = cur.fetchone()
+            conn.commit()
+            cur.close()
+        else:
+            cur = conn.execute("""
+                INSERT INTO applications (job_id, status, notes, applied_at)
+                SELECT id, ?, ?, CASE WHEN ? = 'applied' THEN CURRENT_TIMESTAMP ELSE NULL END
+                FROM jobs WHERE id = ?
+                ON CONFLICT(job_id) DO UPDATE SET
+                    status = excluded.status,
+                    notes = excluded.notes,
+                    updated_at = CURRENT_TIMESTAMP,
+                    applied_at = COALESCE(
+                        applications.applied_at,
+                        CASE WHEN excluded.status = 'applied' THEN CURRENT_TIMESTAMP ELSE NULL END
+                    )
+            """, (status, notes, status, job_id))
+            result = cur.rowcount
+            conn.commit()
+        if not result:
+            raise LookupError("La oferta ya no existe.")
+    finally:
+        conn.close()
+
+
+def load_applications(status_filter=None):
+    conn, is_postgres = get_app_database()
+    if conn is None:
+        return []
+    try:
+        placeholder = "%s" if is_postgres else "?"
+        aggregate = "STRING_AGG(skills.name, ', ')" if is_postgres else "GROUP_CONCAT(skills.name, ', ')"
+        sql = f"""
+            SELECT jobs.id AS job_id, jobs.title, jobs.company, jobs.location,
+                   jobs.redirect_url, jobs.created, jobs.contract_type, jobs.description, applications.status,
+                   applications.notes, applications.created_at,
+                   applications.updated_at, applications.applied_at,
+                   COALESCE({aggregate}, '') AS skills
+            FROM applications
+            JOIN jobs ON jobs.id = applications.job_id
+            LEFT JOIN job_skills ON job_skills.job_id = jobs.id
+            LEFT JOIN skills ON skills.id = job_skills.skill_id
+        """
+        params = ()
+        if status_filter in APPLICATION_STATUSES:
+            sql += f" WHERE applications.status = {placeholder}"
+            params = (status_filter,)
+        sql += """
+            GROUP BY jobs.id, applications.status, applications.notes,
+                     applications.created_at, applications.updated_at,
+                     applications.applied_at
+            ORDER BY applications.updated_at DESC
+        """
+        if is_postgres:
+            cur = conn.cursor()
+            cur.execute(sql, params)
+            rows = [dict(zip([col[0] for col in cur.description], row)) for row in cur.fetchall()]
+            cur.close()
+        else:
+            rows = [dict(row) for row in conn.execute(sql, params).fetchall()]
+        for row in rows:
+            match = calculate_job_match(row)
+            row["match_score"] = match["score"]
+            row["matched_skills"] = match["matched_skills"]
+            row["match_breakdown"] = match["breakdown"]
+            row["match_details"] = match["details"]
+            row["match_confidence"] = match["confidence"]
+        return rows
+    finally:
+        conn.close()
+
+
+def delete_application(job_id):
+    conn, is_postgres = get_app_database()
+    if conn is None:
+        return
+    try:
+        if is_postgres:
+            cur = conn.cursor()
+            cur.execute("DELETE FROM applications WHERE job_id = %s", (job_id,))
+            conn.commit()
+            cur.close()
+        else:
+            conn.execute("DELETE FROM applications WHERE job_id = ?", (job_id,))
+            conn.commit()
+    finally:
+        conn.close()
+
+
+def validate_csrf():
+    submitted = request.form.get("csrf_token", "")
+    expected = session.get("csrf_token", "")
+    return bool(expected and hmac.compare_digest(submitted, expected))
+
+
+def enrich_jobs(rows):
+    enriched = []
+    for row in rows:
+        item = dict(row)
+        match = calculate_job_match(item)
+        item["match_score"] = match["score"]
+        item["matched_skills"] = match["matched_skills"]
+        item["match_breakdown"] = match["breakdown"]
+        item["match_details"] = match["details"]
+        item["match_confidence"] = match["confidence"]
+        item["application_status"] = item.get("application_status") or ""
+        enriched.append(item)
+    return enriched
+
+
 def load_jobs(limit=200, sort=DEFAULT_SORT):
     """Devuelve hasta `limit` ofertas, más recientes primero, con sus skills."""
     # Si se proporciona DATABASE_URL, usamos PostgreSQL
@@ -202,6 +605,14 @@ def load_jobs(limit=200, sort=DEFAULT_SORT):
         "location": "jobs.location COLLATE NOCASE ASC, jobs.created DESC",
         "company": "jobs.company COLLATE NOCASE ASC, jobs.created DESC",
         "skills": "skill_count DESC, jobs.created DESC",
+        "match": "jobs.created DESC",
+    }.get(sort, "jobs.created DESC")
+    postgres_order_clause = {
+        "date": "jobs.created DESC",
+        "location": "LOWER(jobs.location) ASC, jobs.created DESC",
+        "company": "LOWER(jobs.company) ASC, jobs.created DESC",
+        "skills": "skill_count DESC, jobs.created DESC",
+        "match": "jobs.created DESC",
     }.get(sort, "jobs.created DESC")
 
     if database_url:
@@ -211,6 +622,7 @@ def load_jobs(limit=200, sort=DEFAULT_SORT):
             return []
 
         try:
+            ensure_applications_table(conn, True)
             cur = conn.cursor()
             sql = f"""
             SELECT
@@ -223,20 +635,26 @@ def load_jobs(limit=200, sort=DEFAULT_SORT):
                 jobs.contract_type,
                 jobs.created,
                 jobs.redirect_url,
+                jobs.source,
                 COUNT(skills.id) AS skill_count,
-                COALESCE(STRING_AGG(skills.name, ', '), '') AS skills
+                COALESCE(STRING_AGG(skills.name, ', '), '') AS skills,
+                COALESCE(MAX(applications.status), '') AS application_status
             FROM jobs
             LEFT JOIN job_skills ON job_skills.job_id = jobs.id
             LEFT JOIN skills ON skills.id = job_skills.skill_id
+            LEFT JOIN applications ON applications.job_id = jobs.id
             GROUP BY jobs.id
-            ORDER BY {order_clause}
+            ORDER BY {postgres_order_clause}
             LIMIT %s
             """
             cur.execute(sql, (limit,))
             rows = cur.fetchall()
             cols = [d[0] for d in cur.description]
             result = [dict(zip(cols, r)) for r in rows]
-            return result
+            enriched = enrich_jobs(result)
+            if sort == "match":
+                enriched.sort(key=lambda job: job["match_score"], reverse=True)
+            return enriched
         finally:
             conn.close()
 
@@ -246,7 +664,9 @@ def load_jobs(limit=200, sort=DEFAULT_SORT):
 
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA foreign_keys = ON")
     try:
+        ensure_applications_table(conn, False)
         cursor = conn.execute(
             f"""
             SELECT
@@ -260,17 +680,22 @@ def load_jobs(limit=200, sort=DEFAULT_SORT):
                 jobs.created,
                 jobs.redirect_url,
                 COUNT(skills.id) AS skill_count,
-                COALESCE(GROUP_CONCAT(skills.name, ', '), '') AS skills
+                COALESCE(GROUP_CONCAT(skills.name, ', '), '') AS skills,
+                COALESCE(MAX(applications.status), '') AS application_status
             FROM jobs
             LEFT JOIN job_skills ON job_skills.job_id = jobs.id
             LEFT JOIN skills ON skills.id = job_skills.skill_id
+            LEFT JOIN applications ON applications.job_id = jobs.id
             GROUP BY jobs.id
             ORDER BY {order_clause}
             LIMIT ?
             """,
             (limit,)
         )
-        return cursor.fetchall()
+        enriched = enrich_jobs(cursor.fetchall())
+        if sort == "match":
+            enriched.sort(key=lambda job: job["match_score"], reverse=True)
+        return enriched
     finally:
         conn.close()
 
@@ -280,8 +705,10 @@ def run_refresh():
     if not os.path.exists(INGEST_SCRIPT):
         return False, "No se encuentra ingest.py en el directorio raíz."
 
-    if not os.environ.get("ADZUNA_APP_ID") or not os.environ.get("ADZUNA_APP_KEY"):
-        return False, "Faltan las variables de entorno ADZUNA_APP_ID y/o ADZUNA_APP_KEY."
+    has_adzuna = bool(os.environ.get("ADZUNA_APP_ID") and os.environ.get("ADZUNA_APP_KEY"))
+    has_jooble = bool(os.environ.get("JOOBLE_API_KEY"))
+    if not (has_adzuna or has_jooble):
+        return False, "Configura las credenciales de Adzuna o JOOBLE_API_KEY para importar ofertas."
 
     try:
         result = subprocess.run(
@@ -295,8 +722,12 @@ def run_refresh():
         return False, "ingest.py tardó demasiado y se canceló."
 
     if result.returncode != 0:
-        error_detail = (result.stderr or result.stdout or "Error desconocido.").strip()
-        return False, error_detail
+        error_detail = (result.stderr or result.stdout or "Unknown error").strip()
+        # Redact query-string credentials and Jooble's path-based API key.
+        error_detail = re.sub(r"([?&](?:app_key|app_id)=)[^&\s]+", r"\1[REDACTED]", error_detail, flags=re.IGNORECASE)
+        error_detail = re.sub(r"(https?://[^/]+/api/)[^/\s]+", r"\1[REDACTED]", error_detail, flags=re.IGNORECASE)
+        app.logger.error("ingest.py failed (exit %s): %s", result.returncode, error_detail)
+        return False, "No se pudieron actualizar las ofertas. El proveedor puede estar temporalmente no disponible; inténtalo de nuevo más tarde."
 
     return True, result.stdout.strip()
 
@@ -316,7 +747,46 @@ def index():
         t=t,
         languages=SUPPORTED_LANGUAGES,
         jobs_count_label=jobs_count_label,
+        csrf_token=session.setdefault("csrf_token", secrets.token_urlsafe(32)),
     )
+
+
+@app.route("/applications")
+def applications():
+    status_filter = request.args.get("status", "")
+    if status_filter not in APPLICATION_STATUSES:
+        status_filter = None
+    items = load_applications(status_filter)
+    return render_template(
+        "applications.html",
+        applications=items,
+        statuses=APPLICATION_STATUSES,
+        selected_status=status_filter or "",
+        csrf_token=session.setdefault("csrf_token", secrets.token_urlsafe(32)),
+    )
+
+
+@app.route("/applications/<int:job_id>", methods=["POST"])
+def update_application(job_id):
+    if not validate_csrf():
+        return "Solicitud no válida. Recarga la página e inténtalo de nuevo.", 400
+    status = request.form.get("status", "saved")
+    notes = request.form.get("notes", "")
+    try:
+        save_application(job_id, status, notes)
+        flash("Candidatura actualizada correctamente.", "success")
+    except (ValueError, LookupError) as exc:
+        flash(str(exc), "danger")
+    return redirect(url_for("applications"))
+
+
+@app.route("/applications/<int:job_id>/delete", methods=["POST"])
+def remove_application(job_id):
+    if not validate_csrf():
+        return "Solicitud no válida. Recarga la página e inténtalo de nuevo.", 400
+    delete_application(job_id)
+    flash("Oferta retirada de tu seguimiento.", "success")
+    return redirect(url_for("applications"))
 
 
 @app.route("/refresh", methods=["POST"])
@@ -325,6 +795,9 @@ def refresh():
     lang = get_locale()
     sort = get_sort()
     t = get_translations(lang)
+
+    if not validate_csrf():
+        return "Solicitud no válida. Recarga la página e inténtalo de nuevo.", 400
 
     elapsed = time.monotonic() - _last_refresh_at
     if elapsed < REFRESH_MIN_INTERVAL_SECONDS:

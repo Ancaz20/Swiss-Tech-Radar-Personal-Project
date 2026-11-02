@@ -52,12 +52,33 @@ class IngestTests(unittest.TestCase):
         self.assertEqual(ingest.build_search_query("junior developer"), "junior developer python")
         ingest.STACK_FOCUS = None
 
-    def test_reset_database_clears_existing_rows(self):
-        ingest.save_job(self.conn, {"id": "job-1", "title": "Junior Dev", "company": {"display_name": "Acme"}, "location": {"display_name": "Zurich"}, "salary_min": None, "salary_max": None, "contract_type": None, "created": None, "redirect_url": None, "description": "Python"}, ["python"])
-        ingest.reset_database(self.conn)
-        self.assertEqual(self.conn.execute("SELECT COUNT(*) FROM jobs").fetchone()[0], 0)
-        self.assertEqual(self.conn.execute("SELECT COUNT(*) FROM skills").fetchone()[0], 0)
-        self.assertEqual(self.conn.execute("SELECT COUNT(*) FROM job_skills").fetchone()[0], 0)
+    def test_normalize_jooble_job_maps_fields_to_common_shape(self):
+        job = ingest.normalize_jooble_job({
+            "id": 12345, "title": "Junior Python Developer",
+            "company": "Example AG", "location": "Zurich",
+            "snippet": "Python and Docker", "type": "Full-time",
+            "link": "https://ch.jooble.org/jdp/12345",
+            "updated": "2026-11-01T10:00:00",
+        })
+        self.assertEqual(job["id"], "jooble:12345")
+        self.assertEqual(job["_source"], "jooble")
+        self.assertEqual(job["company"], {"display_name": "Example AG"})
+        self.assertEqual(job["redirect_url"], "https://ch.jooble.org/jdp/12345")
+
+    def test_save_jooble_job_persists_source_and_skills(self):
+        job = {
+            "id": "jooble:12345", "_source": "jooble",
+            "title": "Junior Python Developer",
+            "company": {"display_name": "Example AG"},
+            "location": {"display_name": "Zurich"},
+            "contract_type": "Full-time", "created": "2026-11-01",
+            "redirect_url": "https://ch.jooble.org/jdp/12345",
+            "description": "Python and Docker",
+        }
+        ingest.save_job(self.conn, job, ["python", "docker"])
+        row = self.conn.execute("SELECT source, title FROM jobs WHERE adzuna_id = ?", ("jooble:12345",)).fetchone()
+        self.assertEqual(row[0], "jooble")
+        self.assertEqual(row[1], "Junior Python Developer")
 
     def test_save_job_persists_job_and_skill_links(self):
         job = {

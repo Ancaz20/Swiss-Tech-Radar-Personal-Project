@@ -1,22 +1,23 @@
-version: '3.8'
 services:
   web:
-    build: .
+    build:
+      context: ..
+      dockerfile: app/Dockerfile
     ports:
       - "5000:5000"
     env_file:
       - .env
     environment:
-      FLASK_SECRET_KEY: ${FLASK_SECRET_KEY:-dev_secret_key}
+      PROJECT_ROOT: /app
+      FLASK_SECRET_KEY: ${FLASK_SECRET_KEY:?Set FLASK_SECRET_KEY in app/.env}
       FLASK_ENV: production
-      # Database URL for PostgreSQL (service `db` defined below)
-      DATABASE_URL: ${DATABASE_URL:-postgresql://postgres:example@db:5432/swiss}
-      ADZUNA_APP_ID: ${ADZUNA_APP_ID}
-      ADZUNA_APP_KEY: ${ADZUNA_APP_KEY}
-    volumes:
-      - .:/app
+      DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL in app/.env}
+      ADZUNA_APP_ID: ${ADZUNA_APP_ID:?Set ADZUNA_APP_ID in app/.env}
+      ADZUNA_APP_KEY: ${ADZUNA_APP_KEY:?Set ADZUNA_APP_KEY in app/.env}
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+    restart: unless-stopped
 
   db:
     image: postgres:15
@@ -25,12 +26,15 @@ services:
       - .env
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-example}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in app/.env}
       POSTGRES_DB: ${POSTGRES_DB:-swiss}
     volumes:
       - pgdata:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
 volumes:
   pgdata:

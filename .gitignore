@@ -1,50 +1,33 @@
-# Python artifacts
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
+.Python
 
 # Virtual environments
 .venv/
 venv/
 ENV/
+env/
 
-# Environment files
+# Secrets and environment files
 .env
-.env.local
+.env.*
+!.env.example
 
-# SQLite and DB files
+# Databases and logs
 *.db
 *.sqlite
-swiss_tech_radar.db
+*.sqlite3
 *.db-journal
-
-# Logs
 *.log
 
-# Editor/IDE
+# Editors and operating systems
 .vscode/
 .idea/
-
-# OS files
 .DS_Store
 Thumbs.db
 
-# Docker
-docker-compose.override.yml
-
-# Misc
+# Node and Docker overrides
 node_modules/
-.venv/
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-.Python
-env/
-venv/
-.idea/
-.vscode/
-*.db
-*.sqlite3
-.DS_Store
-.env
+docker-compose.override.yml

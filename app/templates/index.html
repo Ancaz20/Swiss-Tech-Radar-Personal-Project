@@ -28,10 +28,213 @@
                     radial-gradient(circle at bottom right, rgba(255,255,255,0.12), transparent 28%);
         pointer-events: none;
       }
-      .hero h1 {
-        font-weight: 800;
-        letter-spacing: -0.03em;
+      .hero > .col-12 { position: relative; z-index: 1; }
+      .hero {
+        background: linear-gradient(125deg, #102a56 0%, #174ea6 52%, #087eaa 100%);
+        border: 1px solid rgba(15, 23, 42, .18);
       }
+      .hero h1 {
+        color: #fff;
+        font-weight: 800;
+        letter-spacing: -0.035em;
+        text-shadow: 0 2px 16px rgba(2, 12, 32, .28);
+      }
+      .hero .lead { color: #f1f7ff; text-shadow: 0 1px 5px rgba(2,12,32,.2); }
+      .hero > .col-12 > .badge.bg-white {
+        color: #123b78 !important;
+        background: #fff !important;
+        border: 1px solid #dbeafe;
+        box-shadow: 0 4px 14px rgba(2,12,32,.18);
+      }
+      .hero .btn-white {
+        min-height: 52px;
+        padding: .8rem 1.55rem;
+        background: #fff;
+        color: #123b78 !important;
+        border: 2px solid #fff;
+        font-weight: 800;
+        box-shadow: 0 8px 22px rgba(2,12,32,.28) !important;
+      }
+      .hero .btn-white:hover, .hero .btn-white:focus-visible {
+        background: #dbeafe;
+        color: #0b2854 !important;
+        border-color: #bfdbfe;
+        transform: translateY(-1px);
+      }
+      .hero .btn-white:focus-visible,
+      .hero .btn:focus-visible,
+      .sort-box .btn:focus-visible {
+        outline: 3px solid #fbbf24;
+        outline-offset: 3px;
+        box-shadow: 0 0 0 4px rgba(15,23,42,.28);
+      }
+      .hero .info-pill {
+        background: rgba(5, 20, 48, .42);
+        border-color: rgba(219, 234, 254, .55);
+        color: #fff;
+        box-shadow: 0 4px 14px rgba(2,12,32,.12);
+      }
+      .sort-box {
+        background: #f8fafc;
+        border: 1px solid #cbd5e1;
+      }
+      .sort-box .text-muted { color: #334155 !important; font-weight: 700; }
+      .sort-box .btn-outline-light {
+        color: #173b70;
+        background: #fff;
+        border: 1.5px solid #64748b;
+        font-weight: 700;
+        box-shadow: 0 1px 2px rgba(15,23,42,.08);
+      }
+      .sort-box .btn-outline-light:hover,
+      .sort-box .btn-outline-light:focus,
+      .sort-box .btn-outline-light.active {
+        color: #fff;
+        background: #1646a0;
+        border-color: #1646a0;
+      }
+      .hero .applications-link {
+        color: #fff;
+        background: #123b78;
+        border: 1.5px solid #dbeafe;
+        font-weight: 700;
+        padding: .55rem .9rem;
+      }
+      .hero .applications-link:hover {
+        color: #102a56;
+        background: #fff;
+        border-color: #fff;
+      }
+      .hero .language-toggle {
+        color: #123b78 !important;
+        background: #fff !important;
+        border: 2px solid #dbeafe !important;
+        border-radius: 999px;
+        padding: .55rem 1rem;
+        font-weight: 750;
+        box-shadow: 0 5px 16px rgba(2,12,32,.2);
+      }
+      .hero .language-toggle:hover,
+      .hero .language-toggle:focus {
+        color: #0b2854 !important;
+        background: #dbeafe !important;
+        border-color: #fff !important;
+      }
+      .hero .dropdown-menu {
+        border: 1px solid #cbd5e1;
+        box-shadow: 0 12px 28px rgba(15,23,42,.2);
+        padding: .4rem;
+      }
+      .hero .dropdown-item {
+        color: #1e293b;
+        border-radius: 8px;
+        font-weight: 600;
+        padding: .6rem .8rem;
+      }
+      .hero .dropdown-item.active,
+      .hero .dropdown-item:active {
+        color: #fff;
+        background: #1646a0;
+      }
+      .hero .dropdown-item:hover { color:#123b78; background:#dbeafe; }
+      /* Header alignment and control hierarchy */
+      .hero { text-align: center; }
+      .hero h1, .hero .lead { margin-inline: auto; }
+      .hero .lead { max-width: 760px; }
+      .hero .header-summary, .hero .header-actions, .hero .sort-box > div { justify-content: center !important; align-items: center !important; }
+      .hero .header-summary { width: 100%; }
+      .hero .header-refresh { display:flex; justify-content:center; width:100%; }
+      .hero .btn-refresh { color:#172554 !important; background:#fbbf24 !important; border:2px solid #fde68a !important; border-radius:14px !important; font-weight:800; letter-spacing:.01em; padding:.85rem 1.8rem; box-shadow:0 8px 20px rgba(2,12,32,.3) !important; }
+      .hero .btn-refresh:hover, .hero .btn-refresh:focus-visible { color:#0f172a !important; background:#fcd34d !important; border-color:#fff !important; transform:translateY(-2px); }
+      .hero .sort-box { max-width:760px; margin:0 auto 1.25rem; padding:1.15rem 1.25rem; text-align:center; background:#f1f5f9; border:1px solid #cbd5e1; }
+      .hero .sort-controls { display:flex; flex-wrap:wrap; justify-content:center; gap:.55rem; }
+      .hero .sort-controls .btn { min-width:7.5rem; color:#102a56 !important; background:#fff !important; border:1.5px solid #64748b !important; border-radius:12px !important; font-weight:750; padding:.6rem .95rem; }
+      .hero .sort-controls .btn:hover, .hero .sort-controls .btn.active { color:#172554 !important; background:#fbbf24 !important; border-color:#d97706 !important; }
+      .hero .header-actions { display:flex; justify-content:center; margin:1.2rem 0 .4rem; }
+      .hero .applications-link { color:#fff !important; background:#334155 !important; border:1.5px solid #cbd5e1 !important; border-radius:12px; font-weight:750; padding:.65rem 1.1rem; }
+      .hero .applications-link:hover { color:#102a56 !important; background:#e2e8f0 !important; border-color:#fff !important; }
+      .hero .language-picker {
+        position:absolute;
+        top:1.25rem;
+        right:1.5rem;
+        z-index:5;
+        display:flex;
+        flex-direction:column;
+        align-items:flex-end;
+        gap:.4rem;
+        margin:0 !important;
+        line-height:1.5;
+      }
+      .hero .language-picker-label {
+        color:#e0f2fe;
+        font-size:.68rem;
+        font-weight:750;
+        letter-spacing:.07em;
+        line-height:1.5;
+        text-transform:uppercase;
+        margin:0;
+      }
+      .hero .language-toggle {
+        min-width:0;
+        min-height:34px;
+        color:#082f49 !important;
+        background:#67e8f9 !important;
+        border:1.5px solid #cffafe !important;
+        border-radius:10px !important;
+        padding:.35rem .7rem;
+        font-size:.78rem;
+        line-height:1.4;
+        font-weight:800;
+        box-shadow:0 4px 12px rgba(2,12,32,.22);
+      }
+      .hero .language-toggle:hover, .hero .language-toggle:focus-visible {
+        color:#082f49 !important;
+        background:#a5f3fc !important;
+        border-color:#fff !important;
+      }
+      .hero .language-picker .dropdown-menu {
+        min-width:150px;
+        margin-top:.45rem !important;
+        padding:.4rem;
+        text-align:left;
+        line-height:1.5;
+        list-style:none;
+      }
+      .hero .language-picker .dropdown-menu li {
+        list-style:none;
+        margin:0;
+        padding:0;
+      }
+      .hero .language-picker .dropdown-menu li::marker {
+        content:"";
+      }
+      .hero .language-picker .dropdown-item.active,
+      .hero .language-picker .dropdown-item:active {
+        color:#172554 !important;
+        background:#fbbf24 !important;
+        border:1px solid #d97706;
+        font-weight:800;
+      }
+      .hero .language-picker .dropdown-item {
+        display:block;
+        padding:.4rem .65rem;
+        margin:.08rem 0;
+        line-height:1.35;
+        min-height:32px;
+        font-size:.82rem;
+        white-space:nowrap;
+      }
+      .hero .language-picker .dropdown-menu li + li {
+        margin-top:.04rem;
+      }
+      @media (max-width:767px) {
+        .hero { padding:3.6rem 1.1rem 2rem !important; }
+        .hero .language-picker { top:.8rem; right:.8rem; }
+        .hero .sort-controls { width:100%; }
+        .hero .sort-controls .btn { flex:1 1 42%; }
+        .hero .header-summary { justify-content:center; }
+      }
+      @media (max-width:767px) { .hero { padding:2rem 1.1rem !important; } .hero .sort-controls { width:100%; } .hero .sort-controls .btn { flex:1 1 42%; } .hero .header-summary { justify-content:center; } }
       .hero p {
         color: rgba(255,255,255,0.92);
         max-width: 680px;
@@ -75,57 +278,54 @@
         color: #1d4ed8;
         border-color: #bfdbfe;
       }
+      .offers-panel { max-width: 1480px; margin-inline: auto; }
       .table-responsive {
-        border-radius: 24px;
-        overflow: hidden;
+        width: 100%; margin-inline: auto; border: 1px solid #dbe3ef;
+        border-radius: 18px; overflow-x: auto; background: #fff;
       }
-      .table {
-        border-collapse: separate;
+      .offers-table {
+        width: 100%; min-width: 1120px; margin: 0 auto;
+        border-collapse: separate; border-spacing: 0;
       }
-      .table thead th {
-        background: #f8fafc;
-        border-bottom: 1px solid #e2e8f0;
-        color: #334155;
-        font-weight: 700;
+      .offers-table thead th {
+        position: sticky; top: 0; z-index: 1; background: #eaf0f8;
+        border-bottom: 2px solid #cbd5e1; color: #1e293b;
+        font-size: .82rem; letter-spacing: .035em; text-transform: uppercase;
+        white-space: nowrap;
       }
-      .table-hover tbody tr:hover {
-        background: #eff6ff;
+      .offers-table tbody tr:nth-child(even) { background: #f8fafc; }
+      .offers-table tbody tr:hover { background: #eff6ff; }
+      .offers-table td, .offers-table th {
+        vertical-align: middle; padding: 1rem .9rem; border-bottom: 1px solid #e2e8f0;
       }
-      .table tbody tr {
-        border-bottom: 1px solid #e2e8f0;
+      .offers-table tbody tr:last-child td { border-bottom: 0; }
+      .salary-cell { min-width: 145px; white-space: nowrap; }
+      .salary-value {
+        display: inline-block; padding: .45rem .65rem; border-radius: 10px;
+        background: #ecfdf5; color: #166534; font-weight: 700;
+        font-variant-numeric: tabular-nums;
       }
-      .table tbody tr:last-child {
-        border-bottom: none;
+      .action-cell { min-width: 220px; }
+      .action-buttons { display: flex; flex-wrap: wrap; gap: .45rem; }
+      .action-buttons .btn { font-weight: 650; padding: .45rem .7rem; }
+      .btn-action-save { background:#1d4ed8; color:#fff; border:1px solid #1d4ed8; }
+      .btn-action-save:hover { background:#1e40af; color:#fff; }
+      .btn-action-view { background:#0f766e; color:#fff; border:1px solid #0f766e; }
+      .btn-action-view:hover { background:#115e59; color:#fff; }
+      .btn-action-translate { background:#334155; color:#fff; border:1px solid #334155; }
+      .btn-action-translate:hover { background:#1e293b; color:#fff; }
+      .btn-action-tracking { background:#15803d; color:#fff; border:1px solid #15803d; }
+      .btn-action-tracking:hover { background:#166534; color:#fff; }
+      .sort-box .btn-outline-light {
+        color:#1e40af; background:#fff; border:1px solid #94a3b8; font-weight:600;
       }
-      .table td,
-      .table th {
-        vertical-align: middle;
-        padding: 1rem 0.9rem;
+      .sort-box .btn-outline-light:hover, .sort-box .btn-outline-light.active {
+        color:#fff; background:#1d4ed8; border-color:#1d4ed8;
       }
-      .table tbody td:nth-child(1),
-      .table thead th:nth-child(1) {
-        background: #eef2ff;
-      }
-      .table tbody td:nth-child(2),
-      .table thead th:nth-child(2) {
-        background: #ecfdf5;
-      }
-      .table tbody td:nth-child(3),
-      .table thead th:nth-child(3) {
-        background: #fdf2f8;
-      }
-      .table tbody td:nth-child(4),
-      .table thead th:nth-child(4) {
-        background: #fff7ed;
-      }
-      .table tbody td:nth-child(5),
-      .table thead th:nth-child(5) {
-        background: #eef5ff;
-      }
-      .table tbody td:nth-child(6),
-      .table thead th:nth-child(6) {
-        background: #f8fafc;
-      }
+      .hero .btn-outline-light { color:#fff; border-color:rgba(255,255,255,.8); font-weight:600; }
+      .hero .btn-outline-light:hover { color:#1d4ed8; background:#fff; }
+      .hero .dropdown .btn { color:#fff; border-color:rgba(255,255,255,.8); }
+      .hero .dropdown .btn:hover { color:#1d4ed8; background:#fff; }
       .col-title {
         background: #f8fbff;
       }
@@ -179,17 +379,128 @@
           padding-bottom: 2rem;
         }
       }
+      /* Center button and link labels; remove browser/Bootstrap underlines */
+      .hero .btn,
+      .hero .btn a,
+      .hero .language-picker .dropdown-item,
+      .sort-box .btn,
+      .action-buttons .btn {
+        text-align:center !important;
+        text-decoration:none !important;
+      }
+      .hero .language-picker .dropdown-item:hover,
+      .hero .language-picker .dropdown-item:focus,
+      .hero .language-picker .dropdown-item:active,
+      .hero .language-picker .dropdown-item.active {
+        text-decoration:none !important;
+      }
+      .hero .language-picker .dropdown-toggle {
+        text-align:center !important;
+        text-decoration:none !important;
+      }
+      /* Keep the language selector and selected option in the same gold as Refresh */
+      .hero .language-picker > #languageDropdown,
+      .hero .language-picker > #languageDropdown:focus,
+      .hero .language-picker > #languageDropdown[aria-expanded="true"] {
+        color:#172554 !important;
+        background-color:#fbbf24 !important;
+        border-color:#fde68a !important;
+      }
+      .hero .language-picker .dropdown-menu .dropdown-item.active,
+      .hero .language-picker .dropdown-menu .dropdown-item:active,
+      .hero .language-picker .dropdown-menu .dropdown-item.active:hover {
+        color:#172554 !important;
+        background-color:#fbbf24 !important;
+        border:1px solid #d97706 !important;
+        font-weight:800 !important;
+        box-shadow:none !important;
+      }
+      .hero .language-picker .dropdown-menu .dropdown-item:not(.active) {
+        color:#1e293b !important;
+        background-color:#fff !important;
+      }
+      /* Force no underline on every button-style link, including all interactive states */
+      a.btn,
+      a.btn:link,
+      a.btn:visited,
+      a.btn:hover,
+      a.btn:focus,
+      a.btn:focus-visible,
+      a.btn:active,
+      a.btn.active,
+      a.dropdown-item,
+      a.dropdown-item:link,
+      a.dropdown-item:visited,
+      a.dropdown-item:hover,
+      a.dropdown-item:focus,
+      a.dropdown-item:active,
+      button.btn,
+      button.btn:hover,
+      button.btn:focus,
+      button.btn:active {
+        text-decoration: none !important;
+        text-decoration-line: none !important;
+        text-decoration-thickness: 0 !important;
+      }
+      a.btn *,
+      a.dropdown-item * {
+        text-decoration: none !important;
+        text-decoration-line: none !important;
+      }
+      /* Final button alignment and underline reset */
+      .hero .btn,
+      .sort-box .btn,
+      .action-buttons .btn,
+      .hero .language-picker .dropdown-item {
+        display:inline-flex !important;
+        align-items:center !important;
+        justify-content:center !important;
+        text-align:center !important;
+        text-decoration:none !important;
+        text-decoration-line:none !important;
+        vertical-align:middle;
+      }
+      .hero .language-picker .dropdown-item {
+        display:flex !important;
+        width:100%;
+      }
+      .hero a.btn:link,
+      .hero a.btn:visited,
+      .hero a.btn:hover,
+      .hero a.btn:focus,
+      .hero a.btn:focus-visible,
+      .hero a.btn:active,
+      .hero a.btn.active,
+      .action-buttons a.btn:link,
+      .action-buttons a.btn:visited,
+      .action-buttons a.btn:hover,
+      .action-buttons a.btn:focus,
+      .action-buttons a.btn:active,
+      .hero .language-picker a.dropdown-item,
+      .hero .language-picker a.dropdown-item:hover,
+      .hero .language-picker a.dropdown-item:focus,
+      .hero .language-picker a.dropdown-item:active,
+      .hero .language-picker a.dropdown-item.active {
+        text-decoration:none !important;
+        text-decoration-line:none !important;
+      }
+      .hero .btn *,
+      .action-buttons .btn *,
+      .hero .language-picker .dropdown-item * {
+        text-decoration:none !important;
+        text-decoration-line:none !important;
+      }
     </style>
   </head>
   <body>
-    <div class="container py-5">
+    <div class="container-fluid px-3 px-xl-5 py-5">
       <section class="row hero rounded-4 p-5 mb-5 shadow-lg">
         <div class="col-12">
           <span class="badge bg-white text-primary mb-3">Swiss Tech Radar</span>
           <h1 class="display-5 mb-4">{{ t.hero_title }}</h1>
           <p class="lead mb-4">{{ t.hero_subtitle }}</p>
-          <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-3 mb-4">
-            <div class="d-flex flex-wrap gap-3">
+          <div class="d-flex flex-column align-items-center gap-3 mb-4">
+            <div class="d-flex flex-wrap gap-3 header-summary">
               <span class="info-pill">
                 <strong>{{ jobs_count_label }}</strong>
               </span>
@@ -197,26 +508,32 @@
                 <strong>{{ t.sort_label }}:</strong> {{ t['sort_' ~ sort ~ '_label'] }}
               </span>
             </div>
-            <form method="post" action="{{ url_for('refresh', lang=lang, sort=sort) }}" class="d-inline-block">
-              <button type="submit" class="btn btn-white btn-lg rounded-pill text-primary shadow-sm">{{ t.refresh_button }}</button>
+            <form method="post" action="{{ url_for('refresh', lang=lang, sort=sort) }}" class="header-refresh">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+              <button type="submit" class="btn btn-refresh btn-lg">{{ t.refresh_button }}</button>
             </form>
           </div>
           <div class="mb-3 sort-box">
             <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-3">
               <div>
                 <div class="text-muted small mb-2">{{ t.sort_label }}</div>
-                <div class="btn-group" role="group" aria-label="{{ t.sort_label }}">
+                <div class="btn-group sort-controls" role="group" aria-label="{{ t.sort_label }}">
                   <a href="{{ url_for('index', lang=lang, sort='date') }}" class="btn btn-sm btn-outline-light{% if sort == 'date' %} active{% endif %}">{{ t.sort_date_label }}</a>
                   <a href="{{ url_for('index', lang=lang, sort='location') }}" class="btn btn-sm btn-outline-light{% if sort == 'location' %} active{% endif %}">{{ t.sort_location_label }}</a>
                   <a href="{{ url_for('index', lang=lang, sort='company') }}" class="btn btn-sm btn-outline-light{% if sort == 'company' %} active{% endif %}">{{ t.sort_company_label }}</a>
                   <a href="{{ url_for('index', lang=lang, sort='skills') }}" class="btn btn-sm btn-outline-light{% if sort == 'skills' %} active{% endif %}">{{ t.sort_skills_label }}</a>
+                  <a href="{{ url_for('index', lang=lang, sort='match') }}" class="btn btn-sm btn-outline-light{% if sort == 'match' %} active{% endif %}">🏆 {{ t.sort_match_label }}</a>
                 </div>
               </div>
             </div>
           </div>
-          <div class="dropdown mb-4 text-end">
-            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="languageDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-              {{ t.language_label }}: {{ languages[lang] }}
+          <div class="d-flex justify-content-center gap-2 mb-3 header-actions">
+            <a href="{{ url_for('applications') }}" class="btn btn-sm applications-link">📋 Mis candidaturas</a>
+          </div>
+          <div class="dropdown language-picker">
+            <span class="language-picker-label">{{ t.language_label }}</span>
+            <button class="btn language-toggle dropdown-toggle" type="button" id="languageDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+              {{ languages[lang] }}
             </button>
             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="languageDropdown">
               {% for code, label in languages.items() %}
@@ -240,7 +557,7 @@
         {% endif %}
       {% endwith %}
 
-      <div class="card card-panel p-3 mb-4">
+      <div class="card card-panel offers-panel p-3 p-xl-4 mb-4">
         <div class="d-flex justify-content-between align-items-center mb-3">
           <div>
             <h2 class="h5 mb-1">{{ t.show_offers_title }}</h2>
@@ -251,12 +568,14 @@
         </div>
 
         <div class="table-responsive">
-          <table class="table table-hover align-middle mb-0">
+          <table class="table table-hover offers-table align-middle mb-0">
             <thead class="bg-light text-secondary">
               <tr>
                 <th>📌 {{ t.title_label }}</th>
+                <th>🎯 {{ t.match_score_label }}</th>
                 <th>🏢 {{ t.company_label }}</th>
                 <th>📍 {{ t.location_label }}</th>
+                <th>💰 {{ {'es':'Salario','en':'Salary','de':'Gehalt','fr':'Salaire'}.get(lang, 'Salario') }}</th>
                 <th>💡 {{ t.skills_label }}</th>
                 <th>📅 {{ t.published_label }}</th>
                 <th>🔗 {{ t.actions_label }}</th>
@@ -265,14 +584,58 @@
             <tbody>
               {% if not jobs %}
                 <tr>
-                  <td colspan="6" class="text-center py-4 text-muted">{{ t.no_jobs_message }}</td>
+                  <td colspan="8" class="text-center py-4 text-muted">{{ t.no_jobs_message }}</td>
                 </tr>
               {% else %}
                 {% for job in jobs %}
                   <tr>
-                    <td class="fw-semibold col-title">{{ job.title }}</td>
+                    <td class="fw-semibold col-title">
+                      {{ job.title }}
+                      <div class="mt-1"><span class="badge text-bg-secondary">{{ (job.source or 'adzuna')|capitalize }}</span></div>
+                      <div class="mt-2 d-flex flex-wrap gap-1 align-items-center">
+                        <span class="badge text-bg-primary">{{ job.match_score }}% compatibilidad</span>
+                        <span class="badge text-bg-light text-dark">{{ job.match_confidence }}% datos identificados</span>
+                      </div>
+                      <details class="small mt-2">
+                        <summary class="text-primary">Ver desglose</summary>
+                        <div class="mt-2 fw-normal">
+                          <div>Tecnologías (45%): {{ job.match_breakdown.skills }}/100</div>
+                          <div>Idiomas (25%): {{ job.match_breakdown.languages }}/100</div>
+                          <div>Experiencia (20%): {{ job.match_breakdown.experience }}/100</div>
+                          <div>Contrato (10%): {{ job.match_breakdown.contract }}/100</div>
+                          <ul class="mt-1 ps-3 mb-0">
+                            <li>{{ job.match_details.skills }}</li>
+                            <li>{{ job.match_details.languages }}</li>
+                            <li>{{ job.match_details.experience }}</li>
+                            <li>{{ job.match_details.contract }}</li>
+                          </ul>
+                        </div>
+                      </details>
+                      {% if job.matched_skills %}
+                        <div class="mt-1">{% for skill in job.matched_skills %}<span class="badge rounded-pill text-bg-success me-1">{{ skill }}</span>{% endfor %}</div>
+                      {% endif %}
+                    </td>
+                    <td class="match-score-cell">
+                      <span class="badge rounded-pill {% if job.match_score >= 80 %}text-bg-success{% elif job.match_score >= 60 %}text-bg-primary{% elif job.match_score >= 40 %}text-bg-warning{% else %}text-bg-secondary{% endif %} fs-6">{{ job.match_score }}%</span>
+                      <div class="small text-muted mt-1">{{ job.match_confidence }}% {{ {'es':'datos','en':'data','de':'Daten','fr':'données'}.get(lang, 'datos') }}</div>
+                    </td>
                     <td class="col-company">{{ job.company or '—' }}</td>
                     <td class="col-location">{{ job.location or '—' }}</td>
+                    <td class="salary-cell">
+                      {% if job.salary_min or job.salary_max %}
+                        <span class="salary-value">CHF
+                          {% if job.salary_min and job.salary_max %}
+                            {{ "{:,.0f}".format(job.salary_min|float) }} – {{ "{:,.0f}".format(job.salary_max|float) }}
+                          {% elif job.salary_min %}
+                            {{ "{:,.0f}".format(job.salary_min|float) }}+
+                          {% else %}
+                            {{ "{:,.0f}".format(job.salary_max|float) }}
+                          {% endif %}
+                        </span>
+                      {% else %}
+                        <span class="text-muted small">{{ {'es':'No indicado','en':'Not specified','de':'Nicht angegeben','fr':'Non indiqué'}.get(lang, 'No indicado') }}</span>
+                      {% endif %}
+                    </td>
                     <td class="col-skills">
                       {% if job.skills %}
                         {% for skill in job.skills.split(', ') %}
@@ -283,13 +646,25 @@
                       {% endif %}
                     </td>
                     <td class="col-created">{{ job.created[:10] if job.created else '—' }}</td>
-                    <td class="col-link d-flex gap-2 flex-wrap">
+                    <td class="action-cell">
+                      <div class="action-buttons">
+                      {% if job.application_status %}
+                        <a href="{{ url_for('applications') }}" class="btn btn-sm btn-action-tracking">✓ En seguimiento</a>
+                        <span class="badge text-bg-secondary align-self-center">{{ {'saved':'Guardada','applied':'Solicitada','interview':'Entrevista','offer':'Oferta recibida','rejected':'Descartada','archived':'Archivada'}.get(job.application_status, job.application_status) }}</span>
+                      {% else %}
+                        <form method="post" action="{{ url_for('update_application', job_id=job.id) }}">
+                          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                          <input type="hidden" name="status" value="saved">
+                          <button type="submit" class="btn btn-sm btn-action-save">＋ Guardar</button>
+                        </form>
+                      {% endif %}
                       {% if job.redirect_url %}
-                        <a href="{{ job.redirect_url }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary">{{ t.view_label }}</a>
-                        <a href="https://translate.google.com/translate?sl=auto&tl={{ lang }}&u={{ job.redirect_url|urlencode }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-success">{{ t.translate_label }}</a>
+                        <a href="{{ job.redirect_url }}" target="_blank" rel="noopener" class="btn btn-sm btn-action-view">{{ t.view_label }}</a>
+                        <a href="https://translate.google.com/translate?sl=auto&tl={{ lang }}&u={{ job.redirect_url|urlencode }}" target="_blank" rel="noopener" class="btn btn-sm btn-action-translate">{{ t.translate_label }}</a>
                       {% else %}
                         <span class="text-muted">{{ t.no_link }}</span>
                       {% endif %}
+                      </div>
                     </td>
                   </tr>
                 {% endfor %}

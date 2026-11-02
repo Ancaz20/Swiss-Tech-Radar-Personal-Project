@@ -2,6 +2,7 @@ import csv
 import os
 import re
 import sqlite3
+import time
 import requests
 import psycopg2
 
@@ -35,8 +36,13 @@ STACK_FOCUS = os.environ.get("STACK_FOCUS")
 
 APP_ID = os.environ.get("ADZUNA_APP_ID")
 APP_KEY = os.environ.get("ADZUNA_APP_KEY")
+JOOBLE_API_KEY = os.environ.get("JOOBLE_API_KEY", "").strip()
+JOOBLE_BASE_URL = os.environ.get("JOOBLE_BASE_URL", "https://ch.jooble.org/api").rstrip("/")
+JOOBLE_LOCATION = os.environ.get("JOOBLE_LOCATION", "Switzerland")
+JOOBLE_SEARCH_TERMS = [term.strip() for term in os.environ.get("JOOBLE_SEARCH_TERMS", "junior developer,junior software engineer,trainee").split(",") if term.strip()]
 COUNTRY = "ch"  # Switzerland
-DB_PATH = "swiss_tech_radar.db"
+PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
+DB_PATH = os.path.join(PROJECT_ROOT, "swiss_tech_radar.db")
 
 # Keywords used for simple skill-matching against title + description.
 # Extend this list as you notice more relevant terms in real postings.
@@ -71,9 +77,97 @@ def fetch_jobs(search_term, page=1, results_per_page=20):
         "results_per_page": results_per_page,
         "content-type": "application/json",
     }
-    response = requests.get(url, params=params, timeout=15)
+    # Adzuna occasionally returns transient 5xx/429 responses. Retry briefly
+    # before failing the import so one temporary outage does not abort immediately.
+    retryable_statuses = {429, 500, 502, 503, 504}
+    for attempt in range(3):
+        response = requests.get(url, params=params, timeout=15)
+        if response.status_code not in retryable_statuses or attempt == 2:
+            break
+        time.sleep(2 ** attempt)
+
     response.raise_for_status()
     return response.json().get("results", [])
+
+
+
+def normalize_jooble_job(item):
+    """Map Jooble's response to the common job shape used by Swiss Tech Radar."""
+    external_id = str(item.get("id") or item.get("link") or "").strip()
+    if not external_id:
+        return None
+    return {
+        "id": f"jooble:{external_id}",
+        "_source": "jooble",
+        "title": item.get("title") or "",
+        "company": {"display_name": item.get("company") or ""},
+        "location": {"display_name": item.get("location") or ""},
+        "salary_min": None,
+        "salary_max": None,
+        "contract_type": item.get("type") or "",
+        "created": item.get("updated") or "",
+        "redirect_url": item.get("link") or "",
+        "description": item.get("snippet") or "",
+    }
+
+
+def fetch_jooble_jobs(search_term, page=1, results_per_page=20):
+    """Fetch Swiss listings using Jooble's country-specific REST API."""
+    if not JOOBLE_API_KEY:
+        return []
+    url = f"{JOOBLE_BASE_URL}/{JOOBLE_API_KEY}"
+    payload = {
+        "keywords": search_term,
+        "location": JOOBLE_LOCATION,
+        "page": page,
+        "ResultOnPage": results_per_page,
+        "companysearch": False,
+    }
+    retryable_statuses = {429, 500, 502, 503, 504}
+    for attempt in range(3):
+        try:
+            response = requests.post(url, json=payload, headers={"Content-Type": "application/json"}, timeout=20)
+        except requests.RequestException:
+            if attempt == 2:
+                raise RuntimeError("Jooble request failed due to a network error.")
+            time.sleep(2 ** attempt)
+            continue
+        if response.status_code in retryable_statuses and attempt < 2:
+            time.sleep(2 ** attempt)
+            continue
+        if response.status_code >= 400:
+            raise RuntimeError(f"Jooble returned HTTP {response.status_code}. Check the regional API key and access.")
+        try:
+            data = response.json()
+        except ValueError:
+            raise RuntimeError("Jooble returned an invalid JSON response.")
+        return [job for item in data.get("jobs", []) if (job := normalize_jooble_job(item))]
+    return []
+
+
+def fetch_provider_jobs():
+    """Yield jobs from each configured source; a provider failure won't stop the others."""
+    if APP_ID and APP_KEY:
+        for term in SEARCH_TERMS:
+            query = build_search_query(term)
+            try:
+                for job in fetch_jobs(query):
+                    job["_source"] = "adzuna"
+                    yield "Adzuna", job
+            except Exception as exc:
+                print(f"Adzuna search failed for '{term}': {exc}")
+    else:
+        print("Adzuna skipped: credentials not configured.")
+
+    if JOOBLE_API_KEY:
+        for term in JOOBLE_SEARCH_TERMS:
+            try:
+                for job in fetch_jooble_jobs(build_search_query(term)):
+                    yield "Jooble", job
+            except Exception as exc:
+                print(f"Jooble search failed for '{term}': {exc}")
+    else:
+        print("Jooble skipped: JOOBLE_API_KEY not configured.")
 
 
 def extract_skills(text):
@@ -99,7 +193,7 @@ def build_search_query(search_term):
     if not focus_terms:
         return search_term
 
-    return search_term
+    return " ".join([search_term, *focus_terms])
 
 
 def matches_stack_focus(text):
@@ -113,8 +207,7 @@ def matches_stack_focus(text):
         if term in lowered_text:
             return True
 
-    # If no stack focus is mentioned in the job, keep it so junior roles are not dropped.
-    return False
+    return False  # Exclude jobs that do not match any configured focus term.
 
 
 def looks_like_junior_role(job):
@@ -150,7 +243,8 @@ def get_connection():
                 contract_type TEXT,
                 created TEXT,
                 redirect_url TEXT,
-                description TEXT
+                description TEXT,
+                source TEXT NOT NULL DEFAULT 'adzuna'
             );
 
             CREATE TABLE IF NOT EXISTS skills (
@@ -167,31 +261,20 @@ def get_connection():
             );
             """
         )
+        cur.execute("ALTER TABLE jobs ADD COLUMN IF NOT EXISTS source TEXT NOT NULL DEFAULT 'adzuna'")
         conn.commit()
         cur.close()
         return conn
 
     # SQLite fallback
     conn = sqlite3.connect(DB_PATH)
-    with open("schema.sql") as f:
+    with open(os.path.join(PROJECT_ROOT, "schema.sql"), encoding="utf-8") as f:
         conn.executescript(f.read())
+    columns = {row[1] for row in conn.execute("PRAGMA table_info(jobs)").fetchall()}
+    if "source" not in columns:
+        conn.execute("ALTER TABLE jobs ADD COLUMN source TEXT NOT NULL DEFAULT 'adzuna'")
+        conn.commit()
     return conn
-
-
-def reset_database(conn):
-    """Clear prior rows so each run reflects the latest filtering rules."""
-    if USE_POSTGRES:
-        cur = conn.cursor()
-        cur.execute("DELETE FROM job_skills")
-        cur.execute("DELETE FROM skills")
-        cur.execute("DELETE FROM jobs")
-        conn.commit()
-        cur.close()
-    else:
-        conn.execute("DELETE FROM job_skills")
-        conn.execute("DELETE FROM skills")
-        conn.execute("DELETE FROM jobs")
-        conn.commit()
 
 
 def save_job(conn, job, skills):
@@ -217,8 +300,14 @@ def save_job(conn, job, skills):
         `job_skills`.
       - Remember to conn.commit() at the end.
     """
-    company = job.get("company", {}).get("display_name") if job.get("company") else None
-    location = job.get("location", {}).get("display_name") if job.get("location") else None
+    company_data = job.get("company")
+    location_data = job.get("location")
+    company = company_data.get("display_name") if isinstance(company_data, dict) else company_data
+    location = location_data.get("display_name") if isinstance(location_data, dict) else location_data
+    source = (job.get("_source") or "adzuna").lower()
+    external_id = str(job.get("id") or "").strip()
+    if not external_id:
+        return
 
     if USE_POSTGRES:
         cur = conn.cursor()
@@ -226,13 +315,13 @@ def save_job(conn, job, skills):
         cur.execute(
             """
             INSERT INTO jobs (adzuna_id, title, company, location, salary_min, salary_max,
-                              contract_type, created, redirect_url, description)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                              contract_type, created, redirect_url, description, source)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT (adzuna_id) DO NOTHING
             RETURNING id
             """,
             (
-                job.get("id"),
+                external_id,
                 job.get("title"),
                 company,
                 location,
@@ -242,6 +331,7 @@ def save_job(conn, job, skills):
                 job.get("created"),
                 job.get("redirect_url"),
                 job.get("description"),
+                source,
             ),
         )
         inserted = cur.fetchone()
@@ -249,7 +339,7 @@ def save_job(conn, job, skills):
             job_id = inserted[0]
         else:
             # Row existed; fetch its id
-            cur.execute("SELECT id FROM jobs WHERE adzuna_id = %s", (job.get("id"),))
+            cur.execute("SELECT id FROM jobs WHERE adzuna_id = %s", (external_id,))
             job_id = cur.fetchone()[0]
 
         for skill_name in skills:
@@ -272,11 +362,11 @@ def save_job(conn, job, skills):
             """
             INSERT OR IGNORE INTO jobs (
                 adzuna_id, title, company, location, salary_min, salary_max,
-                contract_type, created, redirect_url, description
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                contract_type, created, redirect_url, description, source
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
-                job.get("id"),
+                external_id,
                 job.get("title"),
                 company,
                 location,
@@ -286,10 +376,11 @@ def save_job(conn, job, skills):
                 job.get("created"),
                 job.get("redirect_url"),
                 job.get("description"),
+                source,
             ),
         )
 
-        cursor = conn.execute("SELECT id FROM jobs WHERE adzuna_id = ?", (job.get("id"),))
+        cursor = conn.execute("SELECT id FROM jobs WHERE adzuna_id = ?", (external_id,))
         job_row = cursor.fetchone()
         if not job_row:
             return
@@ -314,7 +405,7 @@ def export_jobs_to_csv(conn, output_path="job_report.csv"):
         cur.execute(
             """
             SELECT jobs.title, jobs.company, jobs.location, jobs.salary_min, jobs.salary_max,
-                   jobs.contract_type, jobs.created, jobs.redirect_url, COALESCE(STRING_AGG(skills.name, ', '), '')
+                   jobs.contract_type, jobs.created, jobs.redirect_url, COALESCE(STRING_AGG(skills.name, ', '), ''), jobs.source
             FROM jobs
             LEFT JOIN job_skills ON job_skills.job_id = jobs.id
             LEFT JOIN skills ON skills.id = job_skills.skill_id
@@ -328,7 +419,7 @@ def export_jobs_to_csv(conn, output_path="job_report.csv"):
         rows = conn.execute(
             """
             SELECT jobs.title, jobs.company, jobs.location, jobs.salary_min, jobs.salary_max,
-                   jobs.contract_type, jobs.created, jobs.redirect_url, GROUP_CONCAT(skills.name, ', ')
+                   jobs.contract_type, jobs.created, jobs.redirect_url, GROUP_CONCAT(skills.name, ', '), jobs.source
             FROM jobs
             LEFT JOIN job_skills ON job_skills.job_id = jobs.id
             LEFT JOIN skills ON skills.id = job_skills.skill_id
@@ -349,35 +440,31 @@ def export_jobs_to_csv(conn, output_path="job_report.csv"):
             "created",
             "redirect_url",
             "skills",
+            "source",
         ])
         writer.writerows(rows)
 
 
 def main():
-    if not APP_ID or not APP_KEY:
-        raise SystemExit(
-            "Set ADZUNA_APP_ID and ADZUNA_APP_KEY environment variables first."
-        )
+    if not ((APP_ID and APP_KEY) or JOOBLE_API_KEY):
+        raise SystemExit("Configure Adzuna credentials or JOOBLE_API_KEY before importing jobs.")
 
     conn = get_connection()
-    reset_database(conn)
-
-    for term in SEARCH_TERMS:
-        query = build_search_query(term)
-        print(f"Fetching jobs for: {query}")
-        jobs = fetch_jobs(query)
-        for job in jobs:
-            text = f"{job.get('title', '')} {job.get('description', '')}"
+    processed = 0
+    try:
+        for provider, job in fetch_provider_jobs():
             if not looks_like_junior_role(job):
                 continue
-            if not matches_stack_focus(text):
+            searchable_text = f"{job.get('title', '')} {job.get('description', '')}"
+            if not matches_stack_focus(searchable_text):
                 continue
-            skills = extract_skills(text)
-            save_job(conn, job, skills)
+            save_job(conn, job, extract_skills(searchable_text))
+            processed += 1
 
-    export_jobs_to_csv(conn)
-    conn.close()
-    print("Done.")
+        export_jobs_to_csv(conn)
+        print(f"Import complete. Processed {processed} job records from configured providers.")
+    finally:
+        conn.close()
 
 
 if __name__ == "__main__":
