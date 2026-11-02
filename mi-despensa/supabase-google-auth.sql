@@ -8,7 +8,6 @@ create table if not exists public.pantries (
   owner_id uuid not null references auth.users(id) on delete cascade,
   created_at timestamptz not null default now()
 );
-
 create table if not exists public.pantry_members (
   pantry_id uuid not null references public.pantries(id) on delete cascade,
   user_id uuid not null references auth.users(id) on delete cascade,
@@ -16,13 +15,11 @@ create table if not exists public.pantry_members (
   joined_at timestamptz not null default now(),
   primary key (pantry_id,user_id)
 );
-
 create table if not exists public.pantry_items (
   pantry_id uuid primary key references public.pantries(id) on delete cascade,
   items jsonb not null default '[]'::jsonb,
   updated_at timestamptz not null default now()
 );
-
 create table if not exists public.pantry_invitations (
   id uuid primary key default gen_random_uuid(),
   pantry_id uuid not null references public.pantries(id) on delete cascade,
@@ -37,20 +34,12 @@ alter table public.pantry_members enable row level security;
 alter table public.pantry_items enable row level security;
 alter table public.pantry_invitations enable row level security;
 
+-- No se permite acceso directo a las tablas desde el navegador.
+-- Las operaciones pasan por RPCs SECURITY DEFINER que verifican auth.uid().
 drop policy if exists pantry_members_can_read_pantries on public.pantries;
-create policy pantry_members_can_read_pantries on public.pantries for select to authenticated
-using (exists(select 1 from public.pantry_members m where m.pantry_id=id and m.user_id=auth.uid()));
-
 drop policy if exists pantry_members_can_read_members on public.pantry_members;
-create policy pantry_members_can_read_members on public.pantry_members for select to authenticated
-using (exists(select 1 from public.pantry_members m where m.pantry_id=pantry_id and m.user_id=auth.uid()));
-
 drop policy if exists pantry_members_can_read_items on public.pantry_items;
-create policy pantry_members_can_read_items on public.pantry_items for select to authenticated
-using (exists(select 1 from public.pantry_members m where m.pantry_id=pantry_id and m.user_id=auth.uid()));
-
 revoke all on public.pantries, public.pantry_members, public.pantry_items, public.pantry_invitations from anon, authenticated;
-grant select on public.pantries, public.pantry_members, public.pantry_items to authenticated;
 
 create or replace function public.get_my_pantries()
 returns jsonb language plpgsql security definer set search_path=public,auth as $$
@@ -62,12 +51,12 @@ begin
  select 'Mi despensa',v_uid
  where not exists(select 1 from public.pantry_members where user_id=v_uid and role='owner');
  insert into public.pantry_members(pantry_id,user_id,role)
- select p.id,v_uid,'owner' from public.pantries p
- where p.owner_id=v_uid on conflict do nothing;
+ select p.id,v_uid,'owner' from public.pantries p where p.owner_id=v_uid
+ on conflict do nothing;
  insert into public.pantry_items(pantry_id,items)
  select p.id,'[]'::jsonb from public.pantries p
- join public.pantry_members m on m.pantry_id=p.id
- where m.user_id=v_uid on conflict do nothing;
+ join public.pantry_members m on m.pantry_id=p.id where m.user_id=v_uid
+ on conflict do nothing;
  if v_email is not null then
    insert into public.pantry_members(pantry_id,user_id,role)
    select i.pantry_id,v_uid,'member' from public.pantry_invitations i
