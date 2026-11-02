@@ -10,7 +10,7 @@ Swiss Tech Radar turns job-search data into a practical workflow: collect junior
 
 ## Product overview
 
-- **Job discovery:** imports Swiss vacancies from the Adzuna API using configurable search terms.
+- **Multi-source job discovery:** imports Swiss vacancies from Adzuna and, when configured, Jooble through a shared ingestion pipeline. Each listing records its source.
 - **Junior-role filtering:** keeps entry-level, graduate, trainee and junior opportunities while filtering titles that indicate seniority.
 - **Skill extraction:** identifies technologies and keywords in job titles and descriptions.
 - **Profile matching:** calculates an explainable fit estimate across skills, languages, experience and contract type.
@@ -52,10 +52,13 @@ The profile can be configured with environment variables such as:
 ## Architecture
 
 ```text
-Adzuna Jobs API
-      |
-      v
+Adzuna API       Jooble REST API (optional)
+      |                 |
+      +--------+--------+
+               v
 Python ingestion pipeline (ingest.py)
+  - provider-specific adapters
+  - common job normalization
   - query construction
   - junior/seniority filtering
   - skill extraction
@@ -80,7 +83,7 @@ Responsive, multilingual web interface
 
 - **Backend:** Python, Flask
 - **Data and persistence:** PostgreSQL, SQLite, SQL
-- **External integration:** Adzuna REST API
+- **External integration:** Adzuna REST API; optional Jooble REST API
 - **Frontend:** server-rendered HTML, Jinja templates, CSS and Bootstrap
 - **Packaging and deployment:** Docker, Docker Compose, Render
 - **Quality:** Python `unittest` suite and GitHub Actions CI
@@ -92,7 +95,7 @@ The refresh action currently launches the ingestion script as a bounded subproce
 ### Requirements
 
 - Python 3.11+
-- Adzuna API credentials for importing live listings
+- Adzuna API credentials and/or a Jooble API key for importing live listings
 - Docker and Docker Compose if you prefer the containerized setup
 
 ### Python
@@ -112,7 +115,7 @@ python app/app.py
 
 Open [http://localhost:5000](http://localhost:5000).
 
-Without `DATABASE_URL`, the app uses a local SQLite database. Set `ADZUNA_APP_ID` and `ADZUNA_APP_KEY` in your environment before requesting a refresh.
+Without `DATABASE_URL`, the app uses a local SQLite database. Configure Adzuna (`ADZUNA_APP_ID`, `ADZUNA_APP_KEY`) and/or Jooble (`JOOBLE_API_KEY`) before requesting a refresh. Jooble uses a country-specific key and the Switzerland endpoint (`https://ch.jooble.org/api`). Its free API quota is 500 lifetime requests per key, so the default configuration keeps the query list short. See the [Jooble REST API documentation](https://help.jooble.org/en/support/solutions/articles/60001448238).
 
 ### Docker Compose
 
@@ -141,6 +144,7 @@ GitHub Actions runs the unit tests and builds the Docker image for pushes to `ma
 ## Configuration and security
 
 - Never commit `app/.env`, API keys, database passwords or Flask secrets.
+- Jooble's API key is embedded in its request URL path by the provider's API design; do not log request URLs or raw request exceptions. The connector reports sanitized provider errors.
 - Generate a unique `FLASK_SECRET_KEY` for each deployment.
 - The refresh and application-management form actions validate CSRF tokens.
 - The refresh subprocess has a time limit and a minimum interval between requests.
