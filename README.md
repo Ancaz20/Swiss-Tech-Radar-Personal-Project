@@ -73,3 +73,7 @@ La puntuación mide coincidencias de tecnologías, no la probabilidad real de co
 - Los registros se almacenan en la misma base de datos SQLite o PostgreSQL y permanecen aunque actualices las ofertas.
 
 La tabla `applications` se crea automáticamente al abrir la aplicación; no hace falta borrar ni recrear la base de datos.
+
+La puntuación de compatibilidad combina cuatro factores: tecnologías (45 %), idiomas (25 %), experiencia (20 %) y tipo de contrato (10 %). Cada oferta muestra el desglose y una indicación de cuánta información se ha podido identificar en el anuncio. Los requisitos no especificados reciben una valoración neutral, no se consideran automáticamente incumplidos.
+
+Configura el perfil en `app/.env` con `PROFILE_LANGUAGES=spanish:NATIVE,english:C1,french:B1,german:A1` y `PROFILE_EXPERIENCE_YEARS=0`. Los niveles admitidos son A1, A2, B1, B2, C1, C2 y NATIVE. La puntuación es una estimación heurística, no una predicción de contratación.
