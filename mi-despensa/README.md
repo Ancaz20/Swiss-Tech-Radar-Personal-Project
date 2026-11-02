@@ -1,104 +1,105 @@
-# 🏠 Mi Despensa
+# 🛒 Mi Despensa
 
-Aplicación web para gestionar el inventario del hogar, controlar cantidades y compras, y compartir una lista entre varios dispositivos mediante Supabase.
+Aplicación web para organizar la compra y controlar el inventario de la despensa. Permite gestionar productos, moverlos entre listas, guardar favoritos y sincronizar el inventario entre dispositivos mediante Google y Supabase.
 
 <p align="center">
-  <img src="docs/landing-preview.svg" alt="Vista representativa de la página de inicio de Mi Despensa" width="85%">
+  <a href="https://mi-despensa-99yb.onrender.com/app.html"><strong>🚀 Abrir Mi Despensa</strong></a>
 </p>
 
-## 🚀 Aplicación publicada
+## Vista de la aplicación
 
-**[Abrir Mi Despensa](https://mi-despensa-99yb.onrender.com)**
+> Las imágenes de esta sección son **maquetas visuales ilustrativas** preparadas para documentar el diseño. No son capturas de una sesión real ni representan datos reales de una cuenta.
 
-La aplicación está desplegada como sitio estático en Render.
+### Panel principal
 
-## ✨ Funcionalidades
+![Maqueta ilustrativa del panel principal de Mi Despensa](docs/dashboard-preview.svg)
 
-- Añadir artículos con nombre, categoría, cantidad y unidad.
-- Clasificar productos en categorías domésticas.
-- Buscar y filtrar el inventario.
-- Marcar favoritos.
-- Marcar artículos como comprados y restaurarlos.
-- Añadir una URL de imagen a un producto.
-- Exportar e importar copias de seguridad JSON.
-- Crear enlaces privados para compartir una lista.
-- Abrir el enlace desde otro dispositivo para acceder al mismo inventario.
-- Sincronizar cambios periódicamente entre dispositivos conectados.
+### Cabecera y estilo visual
 
-## 🖥️ Capturas y vistas de la interfaz
+![Maqueta ilustrativa de la cabecera](docs/header-preview.svg)
 
-Las siguientes imágenes son **previsualizaciones ilustrativas de la interfaz**, preparadas para documentar el proyecto. No son capturas tomadas de una sesión real del navegador.
+## Funcionalidades
 
-### Página de inicio
+- **Lista de la compra:** añade productos que necesitas comprar.
+- **Despensa:** conserva los productos que ya tienes en casa.
+- **Mover artículos:** marca un producto como comprado para pasarlo a la despensa; cuando se agota, puedes devolverlo a la lista de compra.
+- **Edición de productos:** modifica nombre, categoría, cantidad, unidad, tienda e imagen.
+- **Búsqueda y filtros:** busca productos por nombre, categoría o tienda y filtra favoritos o artículos sin stock.
+- **Favoritos:** marca los artículos que compras habitualmente.
+- **Inventario en la nube:** inicia sesión con Google para guardar y sincronizar las despensas.
+- **Despensas compartidas:** invita a otra persona por correo; debe iniciar sesión con la misma cuenta Google para aceptar el acceso.
+- **Enlace privado heredado:** permite compartir una lista mediante enlace.
+- **Copias de seguridad:** exporta e importa el inventario en formato JSON.
+- **Diseño adaptable:** interfaz preparada para escritorio y móvil.
 
-![Vista previa de la página de inicio](docs/landing-preview.svg)
+### Invitaciones por correo
 
-### Inventario y gestión de productos
+La aplicación registra la invitación en Supabase asociada al correo indicado. **No envía un correo electrónico automáticamente**: comparte con la otra persona el enlace de la aplicación y pídele que inicie sesión con la cuenta Google invitada.
 
-![Vista previa del inventario](docs/inventory-preview.svg)
+## Tecnologías
 
-### Compartir inventario
+- HTML5, CSS3 y JavaScript.
+- [Supabase](https://supabase.com/) — autenticación Google y almacenamiento mediante funciones RPC.
+- [Render](https://render.com/) — alojamiento estático.
+- Git y GitHub — control de versiones.
 
-![Vista previa del panel de listas compartidas](docs/sharing-preview.svg)
-
-## 🔗 Cómo compartir una lista entre dos dispositivos
-
-1. Abre la [aplicación](https://mi-despensa-99yb.onrender.com).
-2. En el apartado **Compartir inventario**, pulsa **Crear enlace compartido**.
-3. Copia el enlace privado generado.
-4. Abre ese enlace en el segundo dispositivo.
-5. Los dos dispositivos accederán a la misma lista. Los cambios se sincronizan automáticamente mediante consultas periódicas.
-
-**Privacidad:** el enlace contiene una clave privada que permite acceder y modificar esa lista. Compártelo únicamente con personas de confianza y evita publicarlo en espacios públicos.
-
-## 🧰 Tecnologías
-
-- HTML5
-- CSS3
-- JavaScript (cliente)
-- [Supabase](https://supabase.com/) para persistencia y funciones RPC de listas compartidas
-- [Render](https://render.com/) para el alojamiento estático
-- GitHub para el control de versiones
-
-## ⚙️ Configuración de Supabase
-
-La aplicación utiliza el proyecto Supabase configurado para Mi Despensa. Para que la función de compartir esté operativa, la base de datos debe tener:
-
-- Tabla `public.shared_lists`.
-- Funciones RPC `create_shared_list`, `get_shared_list` y `save_shared_list`.
-- Políticas de acceso que impidan el acceso directo a la tabla; las operaciones se realizan mediante las funciones RPC y una clave privada por lista.
-
-El SQL de configuración se ejecuta desde **Supabase → SQL Editor**. No se debe incluir ninguna clave `service_role` o `secret` en el código del navegador. La clave publishable/anon está diseñada para uso público, siempre que los permisos de base de datos estén correctamente restringidos.
-
-## 📦 Estructura del proyecto
+## Estructura
 
 ```text
 mi-despensa/
-├── index.html
-├── app.html
-├── styles.css
+├── app.html                  # Aplicación principal
+├── index.html                # Página de presentación
+├── styles.css                # Estilos de la página de presentación
+├── supabase-google-auth.sql  # Esquema y funciones de colaboración
 ├── README.md
 └── docs/
-    ├── landing-preview.svg
-    ├── inventory-preview.svg
-    └── sharing-preview.svg
+    ├── dashboard-preview.svg
+    └── header-preview.svg
 ```
 
-## 🌐 Despliegue
+## Puesta en marcha
 
-- Plataforma: Render Static Site
-- Carpeta publicada: `mi-despensa`
-- Rama: `feature/mi-despensa-v2`
-- URL: https://mi-despensa-99yb.onrender.com
+### 1. Abrir la aplicación
 
-Los cambios enviados a esta rama activan el despliegue automático de la web.
+La versión publicada está disponible en:
 
-## 🔐 Datos y almacenamiento
+**https://mi-despensa-99yb.onrender.com/app.html**
 
-- Sin lista compartida: el inventario se conserva en el almacenamiento local del navegador.
-- Con lista compartida: el inventario se guarda en Supabase y se sincroniza entre los dispositivos que utilizan el mismo enlace privado.
-- Se recomienda exportar periódicamente una copia JSON como respaldo.
+### 2. Configurar Supabase
 
-## 📄 Licencia
+1. Crea un proyecto en Supabase.
+2. Ejecuta el contenido de [`supabase-google-auth.sql`](supabase-google-auth.sql) desde **SQL Editor**.
+3. Activa Google en **Authentication → Providers** y configura las credenciales OAuth de Google.
+4. Añade la URL de la aplicación a las URL de redirección permitidas en Supabase.
+5. Comprueba que el proveedor OAuth de Google tenga configurados el origen de la aplicación y el callback de Supabase.
 
-Proyecto personal. Consulta el repositorio para conocer sus condiciones de uso.
+La aplicación utiliza una clave pública *publishable* en el navegador. Nunca incluyas claves `service_role`, secretos OAuth ni credenciales privadas en archivos públicos o en el repositorio.
+
+### 3. Uso local
+
+Al ser una aplicación estática, puedes abrir `app.html` desde un servidor web local. Para utilizar inicio de sesión y sincronización, configura previamente Supabase y las URL de redirección correspondientes.
+
+## Datos y privacidad
+
+- Sin iniciar sesión, los datos se conservan en el almacenamiento local del navegador.
+- Con Google, el inventario se guarda en la despensa de Supabase a la que pertenece la cuenta.
+- Las operaciones de colaboración se realizan mediante funciones RPC con comprobación de pertenencia.
+- Los enlaces privados heredados deben tratarse como credenciales: cualquier persona que los posea puede acceder a la lista asociada.
+- Exporta periódicamente una copia JSON si necesitas una copia independiente.
+
+## Despliegue
+
+- **Servicio:** Render Static Site.
+- **Directorio publicado:** `mi-despensa`.
+- **Rama de trabajo:** `feature/mi-despensa-v2`.
+- **URL:** https://mi-despensa-99yb.onrender.com
+
+Los cambios enviados a la rama conectada pueden iniciar un despliegue automático en Render.
+
+## Estado de la documentación
+
+Las vistas incluidas son maquetas de referencia. Para añadir capturas fieles de la versión publicada, abre la aplicación desplegada con datos de prueba y sustituye las imágenes SVG de `docs/` por capturas reales de escritorio y móvil.
+
+## Licencia
+
+Proyecto personal. Consulta el repositorio para conocer las condiciones de uso.
