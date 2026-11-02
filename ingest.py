@@ -2,6 +2,7 @@ import csv
 import os
 import re
 import sqlite3
+import time
 import requests
 import psycopg2
 
@@ -72,7 +73,15 @@ def fetch_jobs(search_term, page=1, results_per_page=20):
         "results_per_page": results_per_page,
         "content-type": "application/json",
     }
-    response = requests.get(url, params=params, timeout=15)
+    # Adzuna occasionally returns transient 5xx/429 responses. Retry briefly
+    # before failing the import so one temporary outage does not abort immediately.
+    retryable_statuses = {429, 500, 502, 503, 504}
+    for attempt in range(3):
+        response = requests.get(url, params=params, timeout=15)
+        if response.status_code not in retryable_statuses or attempt == 2:
+            break
+        time.sleep(2 ** attempt)
+
     response.raise_for_status()
     return response.json().get("results", [])
 
