@@ -9,7 +9,8 @@ CREATE TABLE IF NOT EXISTS jobs (
     contract_type TEXT,
     created TEXT,
     redirect_url TEXT,
-    description TEXT
+    description TEXT,
+    source TEXT NOT NULL DEFAULT 'adzuna'
 );
 
 CREATE TABLE IF NOT EXISTS skills (
