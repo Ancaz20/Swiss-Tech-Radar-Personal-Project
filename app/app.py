@@ -6,6 +6,7 @@ import psycopg2
 import subprocess
 import sys
 import time
+import re
 from flask import Flask, render_template, redirect, url_for, flash, request, session
 
 app = Flask(__name__)
@@ -212,7 +213,7 @@ def get_profile_skills():
 
 
 def calculate_match_score(job_skills, profile_skills=None):
-    """Estimate skill overlap; it is guidance, not a hiring prediction."""
+    """Backward-compatible skill-only score helper."""
     if isinstance(job_skills, str):
         skills = {item.strip().lower() for item in job_skills.split(",") if item.strip()}
     else:
@@ -224,6 +225,149 @@ def calculate_match_score(job_skills, profile_skills=None):
         return 0, matched
     denominator = max(3, min(6, len(skills)))
     return min(100, round(len(matched) * 100 / denominator)), matched
+
+
+LEVEL_RANK = {"A1": 1, "A2": 2, "B1": 3, "B2": 4, "C1": 5, "C2": 6, "NATIVE": 7}
+LANGUAGE_ALIASES = {
+    "english": ("english", "anglais", "englisch"),
+    "french": ("french", "français", "francais", "französisch", "franzosisch"),
+    "german": ("german", "deutsch", "allemand"),
+    "spanish": ("spanish", "español", "espanol", "spanisch"),
+    "italian": ("italian", "italien", "italienisch"),
+}
+DEFAULT_PROFILE_LANGUAGES = "spanish:native,english:C1,french:B1,german:A1"
+DEFAULT_TARGET_CONTRACTS = {"internship", "permanent", "temporary", "part-time"}
+
+
+def get_profile_languages():
+    configured = os.environ.get("PROFILE_LANGUAGES", DEFAULT_PROFILE_LANGUAGES)
+    result = {}
+    for item in configured.split(","):
+        if ":" not in item:
+            continue
+        language, level = item.split(":", 1)
+        language = language.strip().lower()
+        level = level.strip().upper()
+        if language and level in LEVEL_RANK:
+            result[language] = level
+    return result
+
+
+def get_profile_experience_years():
+    try:
+        return max(0, float(os.environ.get("PROFILE_EXPERIENCE_YEARS", "0")))
+    except ValueError:
+        return 0.0
+
+
+def detect_language_requirements(text):
+    lowered = (text or "").lower()
+    requirements = {}
+    for language, aliases in LANGUAGE_ALIASES.items():
+        for alias in aliases:
+            escaped = re.escape(alias)
+            patterns = (
+                rf"\b{escaped}\b[^.;\n]{{0,35}}\b(a[12]|b[12]|c[12]|native)\b",
+                rf"\b(a[12]|b[12]|c[12]|native)\b[^.;\n]{{0,25}}\b{escaped}\b",
+            )
+            for pattern in patterns:
+                match = re.search(pattern, lowered, re.IGNORECASE)
+                if match:
+                    level = match.group(1).upper()
+                    requirements[language] = level
+                    break
+            if language in requirements:
+                break
+    return requirements
+
+
+def calculate_language_score(text):
+    requirements = detect_language_requirements(text)
+    profile = get_profile_languages()
+    if not requirements:
+        return 75, [], False
+    details = []
+    scores = []
+    for language, required_level in requirements.items():
+        actual = profile.get(language)
+        if actual is None:
+            score = 0
+            detail = f"{language}: no indicado en tu perfil (se exige {required_level})"
+        else:
+            gap = LEVEL_RANK[required_level] - LEVEL_RANK[actual]
+            score = 100 if gap <= 0 else max(0, 100 - gap * 35)
+            detail = f"{language}: tu nivel {actual}, requisito {required_level}"
+        scores.append(score)
+        details.append(detail)
+    return round(sum(scores) / len(scores)), details, True
+
+
+def calculate_experience_score(job):
+    text = f"{job.get('title', '')} {job.get('description', '')}".lower()
+    profile_years = get_profile_experience_years()
+    years = [float(value) for value in re.findall(
+        r"\b(\d+(?:\.\d+)?)\s*\+?\s*(?:years?|yrs?)\b", text
+    )]
+    if years:
+        required = min(years)
+        score = 100 if required <= profile_years else max(0, 100 - (required - profile_years) * 30)
+        return round(score), f"Experiencia solicitada: {required:g} años; perfil configurado: {profile_years:g}", True
+    if re.search(r"\b(senior|principal|staff engineer|lead engineer|head of)\b", text):
+        return 10, "El anuncio parece orientado a un perfil senior", True
+    if re.search(r"\b(intern|internship|praktikum|stage|trainee|graduate|junior|entry.level|apprentice)\b", text):
+        return 100, "El anuncio menciona prácticas o nivel inicial", True
+    if re.search(r"\b(mid.level|intermediate)\b", text):
+        return 45, "El anuncio parece de nivel intermedio", True
+    return 75, "El anuncio no especifica claramente la experiencia", False
+
+
+def calculate_contract_score(job):
+    contract = (job.get("contract_type") or "").lower()
+    text = f"{job.get('title', '')} {job.get('description', '')} {contract}".lower()
+    if re.search(r"\b(internship|intern|praktikum|stage|trainee|apprenticeship|apprentice)\b", text):
+        return 100, "Prácticas o formación remunerada identificadas", True
+    if re.search(r"\b(freelance|self.employed|independent contractor)\b", text):
+        return 35, "Modalidad freelance: menor prioridad en el perfil actual", True
+    if re.search(r"\b(part.time|part time|temps partiel|teilzeit)\b", text):
+        return 90, "Jornada parcial identificada", True
+    if re.search(r"\b(temporary|fixed.term|fixed term|temporaire|befristet)\b", text):
+        return 80, "Contrato temporal identificado", True
+    if re.search(r"\b(permanent|full.time|full time|cdi|unbefristet)\b", text):
+        return 85, "Contrato estable o jornada completa identificados", True
+    return 75, "El anuncio no especifica claramente el tipo de contrato", False
+
+
+def calculate_job_match(job):
+    """Weighted fit estimate: skills 45%, languages 25%, experience 20%, contract 10%."""
+    skills_score, matched = calculate_match_score(job.get("skills", ""))
+    text = f"{job.get('title', '')} {job.get('description', '')}"
+    language_score, language_notes, language_known = calculate_language_score(text)
+    experience_score, experience_note, experience_known = calculate_experience_score(job)
+    contract_score, contract_note, contract_known = calculate_contract_score(job)
+    weighted = (
+        skills_score * 0.45
+        + language_score * 0.25
+        + experience_score * 0.20
+        + contract_score * 0.10
+    )
+    known = sum((bool(job.get("skills")), language_known, experience_known, contract_known))
+    return {
+        "score": round(weighted),
+        "matched_skills": matched,
+        "breakdown": {
+            "skills": skills_score,
+            "languages": language_score,
+            "experience": experience_score,
+            "contract": contract_score,
+        },
+        "details": {
+            "skills": ", ".join(matched) if matched else "No se detectan coincidencias tecnológicas",
+            "languages": "; ".join(language_notes) if language_notes else "No se detecta un nivel lingüístico exigido",
+            "experience": experience_note,
+            "contract": contract_note,
+        },
+        "confidence": round(known / 4 * 100),
+    }
 
 
 def ensure_applications_table(conn, is_postgres):
@@ -351,7 +495,12 @@ def load_applications(status_filter=None):
         else:
             rows = [dict(row) for row in conn.execute(sql, params).fetchall()]
         for row in rows:
-            row["match_score"], row["matched_skills"] = calculate_match_score(row.get("skills", ""))
+            match = calculate_job_match(row)
+            row["match_score"] = match["score"]
+            row["matched_skills"] = match["matched_skills"]
+            row["match_breakdown"] = match["breakdown"]
+            row["match_details"] = match["details"]
+            row["match_confidence"] = match["confidence"]
         return rows
     finally:
         conn.close()
@@ -384,7 +533,12 @@ def enrich_jobs(rows):
     enriched = []
     for row in rows:
         item = dict(row)
-        item["match_score"], item["matched_skills"] = calculate_match_score(item.get("skills", ""))
+        match = calculate_job_match(item)
+        item["match_score"] = match["score"]
+        item["matched_skills"] = match["matched_skills"]
+        item["match_breakdown"] = match["breakdown"]
+        item["match_details"] = match["details"]
+        item["match_confidence"] = match["confidence"]
         item["application_status"] = item.get("application_status") or ""
         enriched.append(item)
     return enriched
