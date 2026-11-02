@@ -1,10 +1,12 @@
 import os
+import hmac
+import secrets
 import sqlite3
 import psycopg2
 import subprocess
 import sys
 import time
-from flask import Flask, render_template, redirect, url_for, flash, request
+from flask import Flask, render_template, redirect, url_for, flash, request, session
 
 app = Flask(__name__)
 
@@ -21,7 +23,7 @@ if not _secret_key:
         )
 app.secret_key = _secret_key
 
-ROOT_DIR = os.path.dirname(os.path.dirname(__file__))
+ROOT_DIR = os.environ.get("PROJECT_ROOT", os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 DB_PATH = os.path.join(ROOT_DIR, "swiss_tech_radar.db")
 INGEST_SCRIPT = os.path.join(ROOT_DIR, "ingest.py")
 REFRESH_TIMEOUT_SECONDS = 120  # evita que un ingest colgado bloquee la app para siempre
@@ -295,8 +297,8 @@ def run_refresh():
         return False, "ingest.py tardó demasiado y se canceló."
 
     if result.returncode != 0:
-        error_detail = (result.stderr or result.stdout or "Error desconocido.").strip()
-        return False, error_detail
+        app.logger.error("ingest.py failed (exit %s): %s", result.returncode, (result.stderr or result.stdout or "Unknown error").strip())
+        return False, "No se pudieron actualizar las ofertas. Revisa los registros del servidor."
 
     return True, result.stdout.strip()
 
@@ -316,6 +318,7 @@ def index():
         t=t,
         languages=SUPPORTED_LANGUAGES,
         jobs_count_label=jobs_count_label,
+        csrf_token=session.setdefault("csrf_token", secrets.token_urlsafe(32)),
     )
 
 
@@ -325,6 +328,11 @@ def refresh():
     lang = get_locale()
     sort = get_sort()
     t = get_translations(lang)
+
+    submitted_token = request.form.get("csrf_token", "")
+    expected_token = session.get("csrf_token", "")
+    if not expected_token or not hmac.compare_digest(submitted_token, expected_token):
+        return "Solicitud no válida. Recarga la página e inténtalo de nuevo.", 400
 
     elapsed = time.monotonic() - _last_refresh_at
     if elapsed < REFRESH_MIN_INTERVAL_SECONDS:
