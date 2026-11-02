@@ -205,6 +205,12 @@ def load_jobs(limit=200, sort=DEFAULT_SORT):
         "company": "jobs.company COLLATE NOCASE ASC, jobs.created DESC",
         "skills": "skill_count DESC, jobs.created DESC",
     }.get(sort, "jobs.created DESC")
+    postgres_order_clause = {
+        "date": "jobs.created DESC",
+        "location": "LOWER(jobs.location) ASC, jobs.created DESC",
+        "company": "LOWER(jobs.company) ASC, jobs.created DESC",
+        "skills": "skill_count DESC, jobs.created DESC",
+    }.get(sort, "jobs.created DESC")
 
     if database_url:
         try:
@@ -231,7 +237,7 @@ def load_jobs(limit=200, sort=DEFAULT_SORT):
             LEFT JOIN job_skills ON job_skills.job_id = jobs.id
             LEFT JOIN skills ON skills.id = job_skills.skill_id
             GROUP BY jobs.id
-            ORDER BY {order_clause}
+            ORDER BY {postgres_order_clause}
             LIMIT %s
             """
             cur.execute(sql, (limit,))
