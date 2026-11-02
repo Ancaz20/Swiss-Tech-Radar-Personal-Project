@@ -90,10 +90,40 @@ button:not(.secondary):not(.danger){background:linear-gradient(180deg,#f4d18b,#d
 @media(max-width:1050px){.listsGrid{grid-template-columns:1fr}}
 @media(max-width:820px){header{padding:28px 18px;min-height:165px}.headerActions{top:10px;right:10px}.workspace{grid-template-columns:1fr}.mainColumn,.sideColumn{grid-column:1;grid-row:auto}.sideColumn{position:static;display:grid;grid-template-columns:1fr}.navCard{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.navCard .navLink{font-size:.9rem;padding:9px}}
 @media(max-width:480px){body{padding:10px}header{margin-top:48px;padding:18px 12px;min-height:145px}header h1{font-size:2.25rem}header>div:first-child:after{display:none}.navCard{grid-template-columns:1fr 1fr}.listPanel{padding:12px}}
+
+/* Ajuste fiel a la maqueta: cabecera centrada ilustrada y paneles equilibrados */
+header.marketHeader{min-height:205px;padding:24px 220px 28px;display:grid;grid-template-columns:1fr auto 1fr;gap:18px}
+.marketBrand{grid-column:2;grid-row:1;min-width:390px}
+.marketBrand h1{font-size:clamp(2.5rem,4vw,3.8rem);white-space:nowrap}
+.marketBrand .cartMark{font-size:2.4rem;line-height:1.1;color:#e7b65d;filter:drop-shadow(0 2px 5px #1b0b20)}
+.marketArt{align-self:center;font-size:3.2rem;display:flex;align-items:center;justify-content:center;gap:4px;filter:drop-shadow(0 5px 6px #1a0b20)}
+.marketArtLeft{grid-column:1;grid-row:1}.marketArtRight{grid-column:3;grid-row:1}
+.marketArt span,.marketArt i{font-style:normal;font-size:2.6rem}
+.marketHeader:before{bottom:-69px}
+.marketHeader:after{bottom:-82px}
+.workspace{grid-template-columns:220px minmax(0,1fr)}
+.mainColumn{min-width:0}
+.listsGrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.listPanel{min-width:0;min-height:440px}
+.listPanelHeader{align-items:center}
+.listPanelHeader h2{font-size:1.25rem;line-height:1.2}
+.listPanel .toolbar input{min-width:0}
+.listPanel .items{grid-template-columns:1fr}
+.listPanel .item{padding:13px}
+.navCard{min-height:575px;display:flex;flex-direction:column}
+.navCard .accountNav{margin-top:auto;border-top:1px solid #75456f;border-radius:0;padding-top:18px}
+.sideColumn .sideCard{margin-top:0}
+.mainColumn>.panel:first-child{padding:12px 16px;margin:0 0 12px}
+.addToggle{justify-content:center;gap:10px;padding:9px 12px}
+.pantryPanel{background:linear-gradient(145deg,#e2dce4,#d8d1da)}
+.pantryPanel .item{background:#f2eff3}
+@media(max-width:1100px){.listsGrid{grid-template-columns:1fr}.listPanel{min-height:0}}
+@media(max-width:820px){header.marketHeader{grid-template-columns:1fr;min-height:160px;padding:22px 12px;gap:4px}.marketBrand{grid-column:1;grid-row:1;min-width:0}.marketBrand h1{font-size:2.4rem}.marketArt{display:none}.workspace{grid-template-columns:1fr}.navCard{min-height:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.navCard .accountNav{margin-top:0;border:0;padding-top:9px}.listsGrid{grid-template-columns:1fr}}
+@media(max-width:480px){.marketBrand h1{font-size:2rem}.headerActions{top:8px;right:8px}.marketHeader{margin-top:45px!important}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script></head>
 <body><main>
-<header class="marketHeader"><div><h1>Mi Despensa</h1><p class="muted">Lista de la compra y control de tu despensa</p></div><div class="headerActions"><a href="index.html">← Inicio</a><button class="accountToggle" id="accountToggle">Iniciar sesión</button></div><section class="panel accountMenu hidden" id="accountPanel"><h2>Tu cuenta</h2>
+<header class="marketHeader"><div class="marketArt marketArtLeft" aria-hidden="true">🥬<span>🥖</span><i>🥛</i></div><div class="marketBrand"><div class="cartMark" aria-hidden="true">🛒</div><h1>Mi Despensa</h1><p class="muted">Lista de la compra y control de tu despensa</p></div><div class="marketArt marketArtRight" aria-hidden="true"><span>🍝</span><i>🌾</i></div><div class="headerActions"><a href="index.html">← Inicio</a><button class="accountToggle" id="accountToggle">Iniciar sesión</button></div><section class="panel accountMenu hidden" id="accountPanel"><h2>Tu cuenta</h2>
 <div id="signedOut"><p class="muted">Inicia sesión con Google para conservar tu despensa y acceder desde cualquier dispositivo.</p><button id="googleLogin">Continuar con Google</button></div>
 <div id="signedIn" class="hidden"><div class="account"><span id="userEmail" class="pill"></span><button class="secondary" id="logout">Cerrar sesión</button></div>
 <p class="muted" id="cloudStatus">Conectando con tu despensa…</p>
@@ -118,6 +148,7 @@ button:not(.secondary):not(.danger){background:linear-gradient(180deg,#f4d18b,#d
 <a class="navLink" href="#shoppingSection" id="favoritesNav"><span>☆</span>Favoritos</a>
 <a class="navLink" href="#statsSection"><span>▥</span>Estadísticas</a>
 <a class="navLink" href="#sharingSection"><span>⚙</span>Compartir y ajustes</a>
+<a class="navLink accountNav" href="#accountToggle"><span>◉</span>Mi cuenta</a>
 </nav>
 <section class="sideCard" id="sharingSection"><button type="button" class="sideToggle" id="inviteToggle"><span>Compartir con otra cuenta Google</span><span id="inviteChevron">⌄</span></button><div class="sideContent" id="inviteContent" hidden><section id="invitePanel" class="hidden"><p class="muted">Invita a alguien usando el mismo correo con el que iniciará sesión. La invitación se activará cuando esa persona entre en Mi Despensa.</p><div class="toolbar"><input id="inviteEmail" type="email" placeholder="correo@gmail.com"><button id="sendInvite">Invitar a esta despensa</button></div><p class="muted" id="inviteStatus"></p></section><p class="muted" id="inviteLoginHint">Inicia sesión con Google para invitar a otra persona.</p></div></section>
 <section class="sideCard" id="legacySharing"><button type="button" class="sideToggle" id="legacyToggle"><span>Compartir mediante enlace privado</span><span id="legacyChevron">⌄</span></button><div class="sideContent" id="legacyContent" hidden><p class="muted" id="shareStatus">También puedes compartir una lista mediante enlace. Cualquier persona que tenga el enlace podrá editarla.</p><div class="toolbar"><button id="createShare">Crear enlace compartido</button><input id="inviteUrl" type="url" placeholder="Pega aquí un enlace de invitación"><button class="secondary" id="joinShare">Unirme a una lista</button><button class="secondary hidden" id="copyShare">Copiar enlace</button></div></div></section>
