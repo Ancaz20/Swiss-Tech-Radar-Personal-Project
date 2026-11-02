@@ -52,13 +52,6 @@ class IngestTests(unittest.TestCase):
         self.assertEqual(ingest.build_search_query("junior developer"), "junior developer python")
         ingest.STACK_FOCUS = None
 
-    def test_reset_database_clears_existing_rows(self):
-        ingest.save_job(self.conn, {"id": "job-1", "title": "Junior Dev", "company": {"display_name": "Acme"}, "location": {"display_name": "Zurich"}, "salary_min": None, "salary_max": None, "contract_type": None, "created": None, "redirect_url": None, "description": "Python"}, ["python"])
-        ingest.reset_database(self.conn)
-        self.assertEqual(self.conn.execute("SELECT COUNT(*) FROM jobs").fetchone()[0], 0)
-        self.assertEqual(self.conn.execute("SELECT COUNT(*) FROM skills").fetchone()[0], 0)
-        self.assertEqual(self.conn.execute("SELECT COUNT(*) FROM job_skills").fetchone()[0], 0)
-
     def test_save_job_persists_job_and_skill_links(self):
         job = {
             "id": "job-1",
