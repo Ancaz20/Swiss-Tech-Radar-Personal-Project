@@ -276,7 +276,25 @@
                   <tr>
                     <td class="fw-semibold col-title">
                       {{ job.title }}
-                      <div class="mt-2"><span class="badge text-bg-primary">{{ job.match_score }}% compatibilidad</span></div>
+                      <div class="mt-2 d-flex flex-wrap gap-1 align-items-center">
+                        <span class="badge text-bg-primary">{{ job.match_score }}% compatibilidad</span>
+                        <span class="badge text-bg-light text-dark">{{ job.match_confidence }}% datos identificados</span>
+                      </div>
+                      <details class="small mt-2">
+                        <summary class="text-primary">Ver desglose</summary>
+                        <div class="mt-2 fw-normal">
+                          <div>Tecnologías (45%): {{ job.match_breakdown.skills }}/100</div>
+                          <div>Idiomas (25%): {{ job.match_breakdown.languages }}/100</div>
+                          <div>Experiencia (20%): {{ job.match_breakdown.experience }}/100</div>
+                          <div>Contrato (10%): {{ job.match_breakdown.contract }}/100</div>
+                          <ul class="mt-1 ps-3 mb-0">
+                            <li>{{ job.match_details.skills }}</li>
+                            <li>{{ job.match_details.languages }}</li>
+                            <li>{{ job.match_details.experience }}</li>
+                            <li>{{ job.match_details.contract }}</li>
+                          </ul>
+                        </div>
+                      </details>
                       {% if job.matched_skills %}
                         <div class="mt-1">{% for skill in job.matched_skills %}<span class="badge rounded-pill text-bg-success me-1">{{ skill }}</span>{% endfor %}</div>
                       {% endif %}
