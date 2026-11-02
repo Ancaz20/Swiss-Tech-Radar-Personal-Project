@@ -114,8 +114,7 @@ def matches_stack_focus(text):
         if term in lowered_text:
             return True
 
-    # If no stack focus is mentioned in the job, keep it so junior roles are not dropped.
-    return False
+    return False  # Exclude jobs that do not match any configured focus term.
 
 
 def looks_like_junior_role(job):
@@ -177,22 +176,6 @@ def get_connection():
     with open(os.path.join(PROJECT_ROOT, "schema.sql"), encoding="utf-8") as f:
         conn.executescript(f.read())
     return conn
-
-
-def reset_database(conn):
-    """Clear prior rows so each run reflects the latest filtering rules."""
-    if USE_POSTGRES:
-        cur = conn.cursor()
-        cur.execute("DELETE FROM job_skills")
-        cur.execute("DELETE FROM skills")
-        cur.execute("DELETE FROM jobs")
-        conn.commit()
-        cur.close()
-    else:
-        conn.execute("DELETE FROM job_skills")
-        conn.execute("DELETE FROM skills")
-        conn.execute("DELETE FROM jobs")
-        conn.commit()
 
 
 def save_job(conn, job, skills):
@@ -361,23 +344,27 @@ def main():
         )
 
     conn = get_connection()
+    try:
+        for term in SEARCH_TERMS:
+            query = build_search_query(term)
+            print(f"Fetching jobs for: {query}")
+            jobs = fetch_jobs(query)
+            for job in jobs:
+                if not looks_like_junior_role(job):
+                    continue
+                if not matches_stack_focus(
+                    f"{job.get('title', '')} {job.get('description', '')}"
+                ):
+                    continue
+                skills = extract_skills(
+                    f"{job.get('title', '')} {job.get('description', '')}"
+                )
+                save_job(conn, job, skills)
 
-    for term in SEARCH_TERMS:
-        query = build_search_query(term)
-        print(f"Fetching jobs for: {query}")
-        jobs = fetch_jobs(query)
-        for job in jobs:
-            text = f"{job.get('title', '')} {job.get('description', '')}"
-            if not looks_like_junior_role(job):
-                continue
-            if not matches_stack_focus(text):
-                continue
-            skills = extract_skills(text)
-            save_job(conn, job, skills)
-
-    export_jobs_to_csv(conn)
-    conn.close()
-    print("Done.")
+        export_jobs_to_csv(conn)
+        print("Done.")
+    finally:
+        conn.close()
 
 
 if __name__ == "__main__":
