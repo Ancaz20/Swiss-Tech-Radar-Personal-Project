@@ -137,6 +137,28 @@
         background: #1646a0;
       }
       .hero .dropdown-item:hover { color:#123b78; background:#dbeafe; }
+      /* Header alignment and control hierarchy */
+      .hero { text-align: center; }
+      .hero h1, .hero .lead { margin-inline: auto; }
+      .hero .lead { max-width: 760px; }
+      .hero .header-summary, .hero .header-actions, .hero .sort-box > div { justify-content: center !important; align-items: center !important; }
+      .hero .header-summary { width: 100%; }
+      .hero .header-refresh { display:flex; justify-content:center; width:100%; }
+      .hero .btn-refresh { color:#172554 !important; background:#fbbf24 !important; border:2px solid #fde68a !important; border-radius:14px !important; font-weight:800; letter-spacing:.01em; padding:.85rem 1.8rem; box-shadow:0 8px 20px rgba(2,12,32,.3) !important; }
+      .hero .btn-refresh:hover, .hero .btn-refresh:focus-visible { color:#0f172a !important; background:#fcd34d !important; border-color:#fff !important; transform:translateY(-2px); }
+      .hero .sort-box { max-width:760px; margin:0 auto 1.25rem; padding:1.15rem 1.25rem; text-align:center; background:#f1f5f9; border:1px solid #cbd5e1; }
+      .hero .sort-controls { display:flex; flex-wrap:wrap; justify-content:center; gap:.55rem; }
+      .hero .sort-controls .btn { min-width:7.5rem; color:#102a56 !important; background:#fff !important; border:1.5px solid #64748b !important; border-radius:12px !important; font-weight:750; padding:.6rem .95rem; }
+      .hero .sort-controls .btn:hover, .hero .sort-controls .btn.active { color:#172554 !important; background:#fbbf24 !important; border-color:#d97706 !important; }
+      .hero .header-actions { display:flex; justify-content:center; margin:1.2rem 0 .4rem; }
+      .hero .applications-link { color:#fff !important; background:#334155 !important; border:1.5px solid #cbd5e1 !important; border-radius:12px; font-weight:750; padding:.65rem 1.1rem; }
+      .hero .applications-link:hover { color:#102a56 !important; background:#e2e8f0 !important; border-color:#fff !important; }
+      .hero .language-picker { display:flex; flex-direction:column; align-items:center; gap:.65rem; margin:1.5rem auto .25rem !important; }
+      .hero .language-picker-label { color:#e0f2fe; font-size:.85rem; font-weight:750; letter-spacing:.08em; text-transform:uppercase; }
+      .hero .language-toggle { min-width:190px; color:#082f49 !important; background:#67e8f9 !important; border:2px solid #cffafe !important; border-radius:14px !important; padding:.7rem 1.2rem; font-weight:800; box-shadow:0 6px 18px rgba(2,12,32,.28); }
+      .hero .language-toggle:hover, .hero .language-toggle:focus-visible { color:#082f49 !important; background:#a5f3fc !important; border-color:#fff !important; }
+      .hero .language-picker .dropdown-menu { min-width:190px; text-align:center; }
+      @media (max-width:767px) { .hero { padding:2rem 1.1rem !important; } .hero .sort-controls { width:100%; } .hero .sort-controls .btn { flex:1 1 42%; } .hero .header-summary { justify-content:center; } }
       .hero p {
         color: rgba(255,255,255,0.92);
         max-width: 680px;
@@ -290,8 +312,8 @@
           <span class="badge bg-white text-primary mb-3">Swiss Tech Radar</span>
           <h1 class="display-5 mb-4">{{ t.hero_title }}</h1>
           <p class="lead mb-4">{{ t.hero_subtitle }}</p>
-          <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-3 mb-4">
-            <div class="d-flex flex-wrap gap-3">
+          <div class="d-flex flex-column align-items-center gap-3 mb-4">
+            <div class="d-flex flex-wrap gap-3 header-summary">
               <span class="info-pill">
                 <strong>{{ jobs_count_label }}</strong>
               </span>
@@ -299,16 +321,16 @@
                 <strong>{{ t.sort_label }}:</strong> {{ t['sort_' ~ sort ~ '_label'] }}
               </span>
             </div>
-            <form method="post" action="{{ url_for('refresh', lang=lang, sort=sort) }}" class="d-inline-block">
+            <form method="post" action="{{ url_for('refresh', lang=lang, sort=sort) }}" class="header-refresh">
               <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-              <button type="submit" class="btn btn-white btn-lg rounded-pill shadow-sm">{{ t.refresh_button }}</button>
+              <button type="submit" class="btn btn-refresh btn-lg">{{ t.refresh_button }}</button>
             </form>
           </div>
           <div class="mb-3 sort-box">
             <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-3">
               <div>
                 <div class="text-muted small mb-2">{{ t.sort_label }}</div>
-                <div class="btn-group" role="group" aria-label="{{ t.sort_label }}">
+                <div class="btn-group sort-controls" role="group" aria-label="{{ t.sort_label }}">
                   <a href="{{ url_for('index', lang=lang, sort='date') }}" class="btn btn-sm btn-outline-light{% if sort == 'date' %} active{% endif %}">{{ t.sort_date_label }}</a>
                   <a href="{{ url_for('index', lang=lang, sort='location') }}" class="btn btn-sm btn-outline-light{% if sort == 'location' %} active{% endif %}">{{ t.sort_location_label }}</a>
                   <a href="{{ url_for('index', lang=lang, sort='company') }}" class="btn btn-sm btn-outline-light{% if sort == 'company' %} active{% endif %}">{{ t.sort_company_label }}</a>
@@ -317,12 +339,13 @@
               </div>
             </div>
           </div>
-          <div class="d-flex justify-content-end gap-2 mb-3">
+          <div class="d-flex justify-content-center gap-2 mb-3 header-actions">
             <a href="{{ url_for('applications') }}" class="btn btn-sm applications-link">📋 Mis candidaturas</a>
           </div>
-          <div class="dropdown mb-4 text-end">
-            <button class="btn btn-sm language-toggle dropdown-toggle" type="button" id="languageDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-              {{ t.language_label }}: {{ languages[lang] }}
+          <div class="dropdown language-picker">
+            <span class="language-picker-label">{{ t.language_label }}</span>
+            <button class="btn language-toggle dropdown-toggle" type="button" id="languageDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+              {{ languages[lang] }}
             </button>
             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="languageDropdown">
               {% for code, label in languages.items() %}
