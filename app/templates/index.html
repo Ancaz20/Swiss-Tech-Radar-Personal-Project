@@ -75,57 +75,54 @@
         color: #1d4ed8;
         border-color: #bfdbfe;
       }
+      .offers-panel { max-width: 1480px; margin-inline: auto; }
       .table-responsive {
-        border-radius: 24px;
-        overflow: hidden;
+        width: 100%; margin-inline: auto; border: 1px solid #dbe3ef;
+        border-radius: 18px; overflow-x: auto; background: #fff;
       }
-      .table {
-        border-collapse: separate;
+      .offers-table {
+        width: 100%; min-width: 1120px; margin: 0 auto;
+        border-collapse: separate; border-spacing: 0;
       }
-      .table thead th {
-        background: #f8fafc;
-        border-bottom: 1px solid #e2e8f0;
-        color: #334155;
-        font-weight: 700;
+      .offers-table thead th {
+        position: sticky; top: 0; z-index: 1; background: #eaf0f8;
+        border-bottom: 2px solid #cbd5e1; color: #1e293b;
+        font-size: .82rem; letter-spacing: .035em; text-transform: uppercase;
+        white-space: nowrap;
       }
-      .table-hover tbody tr:hover {
-        background: #eff6ff;
+      .offers-table tbody tr:nth-child(even) { background: #f8fafc; }
+      .offers-table tbody tr:hover { background: #eff6ff; }
+      .offers-table td, .offers-table th {
+        vertical-align: middle; padding: 1rem .9rem; border-bottom: 1px solid #e2e8f0;
       }
-      .table tbody tr {
-        border-bottom: 1px solid #e2e8f0;
+      .offers-table tbody tr:last-child td { border-bottom: 0; }
+      .salary-cell { min-width: 145px; white-space: nowrap; }
+      .salary-value {
+        display: inline-block; padding: .45rem .65rem; border-radius: 10px;
+        background: #ecfdf5; color: #166534; font-weight: 700;
+        font-variant-numeric: tabular-nums;
       }
-      .table tbody tr:last-child {
-        border-bottom: none;
+      .action-cell { min-width: 220px; }
+      .action-buttons { display: flex; flex-wrap: wrap; gap: .45rem; }
+      .action-buttons .btn { font-weight: 650; padding: .45rem .7rem; }
+      .btn-action-save { background:#1d4ed8; color:#fff; border:1px solid #1d4ed8; }
+      .btn-action-save:hover { background:#1e40af; color:#fff; }
+      .btn-action-view { background:#0f766e; color:#fff; border:1px solid #0f766e; }
+      .btn-action-view:hover { background:#115e59; color:#fff; }
+      .btn-action-translate { background:#334155; color:#fff; border:1px solid #334155; }
+      .btn-action-translate:hover { background:#1e293b; color:#fff; }
+      .btn-action-tracking { background:#15803d; color:#fff; border:1px solid #15803d; }
+      .btn-action-tracking:hover { background:#166534; color:#fff; }
+      .sort-box .btn-outline-light {
+        color:#1e40af; background:#fff; border:1px solid #94a3b8; font-weight:600;
       }
-      .table td,
-      .table th {
-        vertical-align: middle;
-        padding: 1rem 0.9rem;
+      .sort-box .btn-outline-light:hover, .sort-box .btn-outline-light.active {
+        color:#fff; background:#1d4ed8; border-color:#1d4ed8;
       }
-      .table tbody td:nth-child(1),
-      .table thead th:nth-child(1) {
-        background: #eef2ff;
-      }
-      .table tbody td:nth-child(2),
-      .table thead th:nth-child(2) {
-        background: #ecfdf5;
-      }
-      .table tbody td:nth-child(3),
-      .table thead th:nth-child(3) {
-        background: #fdf2f8;
-      }
-      .table tbody td:nth-child(4),
-      .table thead th:nth-child(4) {
-        background: #fff7ed;
-      }
-      .table tbody td:nth-child(5),
-      .table thead th:nth-child(5) {
-        background: #eef5ff;
-      }
-      .table tbody td:nth-child(6),
-      .table thead th:nth-child(6) {
-        background: #f8fafc;
-      }
+      .hero .btn-outline-light { color:#fff; border-color:rgba(255,255,255,.8); font-weight:600; }
+      .hero .btn-outline-light:hover { color:#1d4ed8; background:#fff; }
+      .hero .dropdown .btn { color:#fff; border-color:rgba(255,255,255,.8); }
+      .hero .dropdown .btn:hover { color:#1d4ed8; background:#fff; }
       .col-title {
         background: #f8fbff;
       }
@@ -182,7 +179,7 @@
     </style>
   </head>
   <body>
-    <div class="container py-5">
+    <div class="container-fluid px-3 px-xl-5 py-5">
       <section class="row hero rounded-4 p-5 mb-5 shadow-lg">
         <div class="col-12">
           <span class="badge bg-white text-primary mb-3">Swiss Tech Radar</span>
@@ -244,7 +241,7 @@
         {% endif %}
       {% endwith %}
 
-      <div class="card card-panel p-3 mb-4">
+      <div class="card card-panel offers-panel p-3 p-xl-4 mb-4">
         <div class="d-flex justify-content-between align-items-center mb-3">
           <div>
             <h2 class="h5 mb-1">{{ t.show_offers_title }}</h2>
@@ -255,12 +252,13 @@
         </div>
 
         <div class="table-responsive">
-          <table class="table table-hover align-middle mb-0">
+          <table class="table table-hover offers-table align-middle mb-0">
             <thead class="bg-light text-secondary">
               <tr>
                 <th>📌 {{ t.title_label }}</th>
                 <th>🏢 {{ t.company_label }}</th>
                 <th>📍 {{ t.location_label }}</th>
+                <th>💰 {{ {'es':'Salario','en':'Salary','de':'Gehalt','fr':'Salaire'}.get(lang, 'Salario') }}</th>
                 <th>💡 {{ t.skills_label }}</th>
                 <th>📅 {{ t.published_label }}</th>
                 <th>🔗 {{ t.actions_label }}</th>
@@ -269,7 +267,7 @@
             <tbody>
               {% if not jobs %}
                 <tr>
-                  <td colspan="6" class="text-center py-4 text-muted">{{ t.no_jobs_message }}</td>
+                  <td colspan="7" class="text-center py-4 text-muted">{{ t.no_jobs_message }}</td>
                 </tr>
               {% else %}
                 {% for job in jobs %}
@@ -301,6 +299,21 @@
                     </td>
                     <td class="col-company">{{ job.company or '—' }}</td>
                     <td class="col-location">{{ job.location or '—' }}</td>
+                    <td class="salary-cell">
+                      {% if job.salary_min or job.salary_max %}
+                        <span class="salary-value">CHF
+                          {% if job.salary_min and job.salary_max %}
+                            {{ "{:,.0f}".format(job.salary_min|float) }} – {{ "{:,.0f}".format(job.salary_max|float) }}
+                          {% elif job.salary_min %}
+                            {{ "{:,.0f}".format(job.salary_min|float) }}+
+                          {% else %}
+                            {{ "{:,.0f}".format(job.salary_max|float) }}
+                          {% endif %}
+                        </span>
+                      {% else %}
+                        <span class="text-muted small">{{ {'es':'No indicado','en':'Not specified','de':'Nicht angegeben','fr':'Non indiqué'}.get(lang, 'No indicado') }}</span>
+                      {% endif %}
+                    </td>
                     <td class="col-skills">
                       {% if job.skills %}
                         {% for skill in job.skills.split(', ') %}
@@ -311,23 +324,25 @@
                       {% endif %}
                     </td>
                     <td class="col-created">{{ job.created[:10] if job.created else '—' }}</td>
-                    <td class="col-link d-flex gap-2 flex-wrap">
+                    <td class="action-cell">
+                      <div class="action-buttons">
                       {% if job.application_status %}
-                        <a href="{{ url_for('applications') }}" class="btn btn-sm btn-outline-success">✓ En seguimiento</a>
+                        <a href="{{ url_for('applications') }}" class="btn btn-sm btn-action-tracking">✓ En seguimiento</a>
                         <span class="badge text-bg-secondary align-self-center">{{ {'saved':'Guardada','applied':'Solicitada','interview':'Entrevista','offer':'Oferta recibida','rejected':'Descartada','archived':'Archivada'}.get(job.application_status, job.application_status) }}</span>
                       {% else %}
                         <form method="post" action="{{ url_for('update_application', job_id=job.id) }}">
                           <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                           <input type="hidden" name="status" value="saved">
-                          <button type="submit" class="btn btn-sm btn-outline-primary">＋ Guardar</button>
+                          <button type="submit" class="btn btn-sm btn-action-save">＋ Guardar</button>
                         </form>
                       {% endif %}
                       {% if job.redirect_url %}
-                        <a href="{{ job.redirect_url }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary">{{ t.view_label }}</a>
-                        <a href="https://translate.google.com/translate?sl=auto&tl={{ lang }}&u={{ job.redirect_url|urlencode }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-success">{{ t.translate_label }}</a>
+                        <a href="{{ job.redirect_url }}" target="_blank" rel="noopener" class="btn btn-sm btn-action-view">{{ t.view_label }}</a>
+                        <a href="https://translate.google.com/translate?sl=auto&tl={{ lang }}&u={{ job.redirect_url|urlencode }}" target="_blank" rel="noopener" class="btn btn-sm btn-action-translate">{{ t.translate_label }}</a>
                       {% else %}
                         <span class="text-muted">{{ t.no_link }}</span>
                       {% endif %}
+                      </div>
                     </td>
                   </tr>
                 {% endfor %}
