@@ -294,14 +294,15 @@
                     </td>
                     <td class="col-created">{{ job.created[:10] if job.created else '—' }}</td>
                     <td class="col-link d-flex gap-2 flex-wrap">
-                      <form method="post" action="{{ url_for('update_application', job_id=job.id) }}">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                        <input type="hidden" name="status" value="{{ 'saved' if not job.application_status else job.application_status }}">
-                        <input type="hidden" name="notes" value="">
-                        <button type="submit" class="btn btn-sm btn-outline-primary">{{ '✓ En seguimiento' if job.application_status else '＋ Guardar' }}</button>
-                      </form>
                       {% if job.application_status %}
+                        <a href="{{ url_for('applications') }}" class="btn btn-sm btn-outline-success">✓ En seguimiento</a>
                         <span class="badge text-bg-secondary align-self-center">{{ {'saved':'Guardada','applied':'Solicitada','interview':'Entrevista','offer':'Oferta recibida','rejected':'Descartada','archived':'Archivada'}.get(job.application_status, job.application_status) }}</span>
+                      {% else %}
+                        <form method="post" action="{{ url_for('update_application', job_id=job.id) }}">
+                          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                          <input type="hidden" name="status" value="saved">
+                          <button type="submit" class="btn btn-sm btn-outline-primary">＋ Guardar</button>
+                        </form>
                       {% endif %}
                       {% if job.redirect_url %}
                         <a href="{{ job.redirect_url }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary">{{ t.view_label }}</a>
