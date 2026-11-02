@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mi Despensa | Inventario del hogar</title>
+<meta name="description" content="Controla los productos de tu hogar, cantidades, favoritos y compras desde una aplicación sencilla.">
+<meta name="theme-color" content="#1a0f2e">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:linear-gradient(135deg,#1a0f2e 0%,#3d1a5c 50%,#2a1a3e 100%);color:#f5f5f5;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.landing-container{max-width:900px;background:linear-gradient(135deg,rgba(42,26,62,.95) 0%,rgba(107,44,145,.1) 100%);border:2px solid #6b2c91;border-radius:12px;padding:60px 40px;text-align:center;box-shadow:0 15px 50px rgba(0,0,0,.4);backdrop-filter:blur(10px)}
+header{margin-bottom:40px}.logo{font-size:80px;margin-bottom:20px;display:block}
+h1{font-size:3.5em;color:#d4af37;margin-bottom:15px;text-shadow:0 2px 10px rgba(212,175,55,.3)}
+.tagline{font-size:1.3em;color:#b0b0b0;margin-bottom:50px}
+.features{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:30px;margin:50px 0}
+.feature{padding:25px;background:rgba(107,44,145,.2);border:1px solid #6b2c91;border-radius:8px;transition:all .3s ease}
+.feature:hover{background:rgba(107,44,145,.4);transform:translateY(-5px);box-shadow:0 5px 20px rgba(212,175,55,.2)}
+.feature-icon{font-size:2.5em;margin-bottom:15px}.feature-title{font-size:1.2em;color:#d4af37;margin-bottom:10px;font-weight:bold}
+.feature-desc{font-size:.95em;color:#b0b0b0;line-height:1.5}
+.cta-section{margin-top:50px;display:flex;gap:20px;justify-content:center;flex-wrap:wrap}
+.btn{padding:15px 40px;font-size:1.1em;border:none;border-radius:8px;cursor:pointer;font-weight:bold;transition:all .3s ease;text-decoration:none;display:inline-block;text-transform:uppercase}
+.btn-primary{background:linear-gradient(135deg,#6b2c91,#4a1966);color:#d4af37;box-shadow:0 5px 20px rgba(107,44,145,.4)}
+.btn-primary:hover{transform:translateY(-3px);box-shadow:0 8px 25px rgba(212,175,55,.3)}
+.btn-secondary{background:transparent;color:#d4af37;border:2px solid #d4af37}.btn-secondary:hover{background:#d4af37;color:#4a1966;transform:translateY(-3px)}
+footer{margin-top:50px;padding-top:30px;border-top:1px solid #6b2c91;color:#999;font-size:.95em}
+.features-intro{font-size:1.15em;color:#d4af37;margin-bottom:30px;font-weight:600}
+@media(max-width:768px){.landing-container{padding:40px 25px}h1{font-size:2.5em}.logo{font-size:60px}.tagline{font-size:1.1em}.features{grid-template-columns:1fr;gap:20px}.btn{width:100%}}
+</style>
+</head>
+<body><div class="landing-container">
+<header><span class="logo">🏠</span><h1>Mi Despensa</h1><p class="tagline">Control sencillo de tu despensa, compras y productos esenciales</p></header>
+<div class="features-intro">✨ Todo lo que necesitas para organizar tu hogar</div>
+<div class="features" id="features">
+<div class="feature"><div class="feature-icon">📦</div><div class="feature-title">Inventario Organizado</div><div class="feature-desc">Mantén un registro completo de todos tus artículos del hogar en un solo lugar.</div></div>
+<div class="feature"><div class="feature-icon">🏷️</div><div class="feature-title">Categorías</div><div class="feature-desc">8 categorías predefinidas para clasificar todo fácilmente: alimentos, bebidas, limpieza y más.</div></div>
+<div class="feature"><div class="feature-icon">🔍</div><div class="feature-title">Búsqueda Rápida</div><div class="feature-desc">Encuentra cualquier artículo al instante con nuestra potente barra de búsqueda.</div></div>
+<div class="feature"><div class="feature-icon">🖼️</div><div class="feature-title">Imágenes de Productos</div><div class="feature-desc">Agrega imágenes de tus productos para identificarlos visualmente.</div></div>
+<div class="feature"><div class="feature-icon">⭐</div><div class="feature-title">Favoritos</div><div class="feature-desc">Marca tus artículos favoritos con una estrella y filtra la lista rápidamente.</div></div>
+<div class="feature"><div class="feature-icon">💾</div><div class="feature-title">Guardado local</div><div class="feature-desc">Tus datos se guardan en este navegador. Puedes exportar una copia de seguridad cuando quieras.</div></div>
+</div>
+<div class="cta-section"><a href="app.html" class="btn btn-primary">🚀 Abrir Aplicación</a><a href="#features" class="btn btn-secondary">📖 Aprender Más</a></div>
+<footer><p>&copy; 2026 <strong>Mi Despensa</strong> - Simplificando tu vida, un artículo a la vez</p></footer>
+</div></body></html>
