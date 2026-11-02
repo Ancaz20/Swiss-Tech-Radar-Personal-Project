@@ -198,6 +198,7 @@
               </span>
             </div>
             <form method="post" action="{{ url_for('refresh', lang=lang, sort=sort) }}" class="d-inline-block">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
               <button type="submit" class="btn btn-white btn-lg rounded-pill text-primary shadow-sm">{{ t.refresh_button }}</button>
             </form>
           </div>
