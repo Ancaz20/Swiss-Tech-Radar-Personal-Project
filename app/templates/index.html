@@ -28,10 +28,115 @@
                     radial-gradient(circle at bottom right, rgba(255,255,255,0.12), transparent 28%);
         pointer-events: none;
       }
-      .hero h1 {
-        font-weight: 800;
-        letter-spacing: -0.03em;
+      .hero > .col-12 { position: relative; z-index: 1; }
+      .hero {
+        background: linear-gradient(125deg, #102a56 0%, #174ea6 52%, #087eaa 100%);
+        border: 1px solid rgba(15, 23, 42, .18);
       }
+      .hero h1 {
+        color: #fff;
+        font-weight: 800;
+        letter-spacing: -0.035em;
+        text-shadow: 0 2px 16px rgba(2, 12, 32, .28);
+      }
+      .hero .lead { color: #f1f7ff; text-shadow: 0 1px 5px rgba(2,12,32,.2); }
+      .hero > .col-12 > .badge.bg-white {
+        color: #123b78 !important;
+        background: #fff !important;
+        border: 1px solid #dbeafe;
+        box-shadow: 0 4px 14px rgba(2,12,32,.18);
+      }
+      .hero .btn-white {
+        min-height: 52px;
+        padding: .8rem 1.55rem;
+        background: #fff;
+        color: #123b78 !important;
+        border: 2px solid #fff;
+        font-weight: 800;
+        box-shadow: 0 8px 22px rgba(2,12,32,.28) !important;
+      }
+      .hero .btn-white:hover, .hero .btn-white:focus-visible {
+        background: #dbeafe;
+        color: #0b2854 !important;
+        border-color: #bfdbfe;
+        transform: translateY(-1px);
+      }
+      .hero .btn-white:focus-visible,
+      .hero .btn:focus-visible,
+      .sort-box .btn:focus-visible {
+        outline: 3px solid #fbbf24;
+        outline-offset: 3px;
+        box-shadow: 0 0 0 4px rgba(15,23,42,.28);
+      }
+      .hero .info-pill {
+        background: rgba(5, 20, 48, .42);
+        border-color: rgba(219, 234, 254, .55);
+        color: #fff;
+        box-shadow: 0 4px 14px rgba(2,12,32,.12);
+      }
+      .sort-box {
+        background: #f8fafc;
+        border: 1px solid #cbd5e1;
+      }
+      .sort-box .text-muted { color: #334155 !important; font-weight: 700; }
+      .sort-box .btn-outline-light {
+        color: #173b70;
+        background: #fff;
+        border: 1.5px solid #64748b;
+        font-weight: 700;
+        box-shadow: 0 1px 2px rgba(15,23,42,.08);
+      }
+      .sort-box .btn-outline-light:hover,
+      .sort-box .btn-outline-light:focus,
+      .sort-box .btn-outline-light.active {
+        color: #fff;
+        background: #1646a0;
+        border-color: #1646a0;
+      }
+      .hero .applications-link {
+        color: #fff;
+        background: #123b78;
+        border: 1.5px solid #dbeafe;
+        font-weight: 700;
+        padding: .55rem .9rem;
+      }
+      .hero .applications-link:hover {
+        color: #102a56;
+        background: #fff;
+        border-color: #fff;
+      }
+      .hero .language-toggle {
+        color: #123b78 !important;
+        background: #fff !important;
+        border: 2px solid #dbeafe !important;
+        border-radius: 999px;
+        padding: .55rem 1rem;
+        font-weight: 750;
+        box-shadow: 0 5px 16px rgba(2,12,32,.2);
+      }
+      .hero .language-toggle:hover,
+      .hero .language-toggle:focus {
+        color: #0b2854 !important;
+        background: #dbeafe !important;
+        border-color: #fff !important;
+      }
+      .hero .dropdown-menu {
+        border: 1px solid #cbd5e1;
+        box-shadow: 0 12px 28px rgba(15,23,42,.2);
+        padding: .4rem;
+      }
+      .hero .dropdown-item {
+        color: #1e293b;
+        border-radius: 8px;
+        font-weight: 600;
+        padding: .6rem .8rem;
+      }
+      .hero .dropdown-item.active,
+      .hero .dropdown-item:active {
+        color: #fff;
+        background: #1646a0;
+      }
+      .hero .dropdown-item:hover { color:#123b78; background:#dbeafe; }
       .hero p {
         color: rgba(255,255,255,0.92);
         max-width: 680px;
@@ -196,7 +301,7 @@
             </div>
             <form method="post" action="{{ url_for('refresh', lang=lang, sort=sort) }}" class="d-inline-block">
               <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-              <button type="submit" class="btn btn-white btn-lg rounded-pill text-primary shadow-sm">{{ t.refresh_button }}</button>
+              <button type="submit" class="btn btn-white btn-lg rounded-pill shadow-sm">{{ t.refresh_button }}</button>
             </form>
           </div>
           <div class="mb-3 sort-box">
@@ -213,10 +318,10 @@
             </div>
           </div>
           <div class="d-flex justify-content-end gap-2 mb-3">
-            <a href="{{ url_for('applications') }}" class="btn btn-sm btn-outline-light">📋 Mis candidaturas</a>
+            <a href="{{ url_for('applications') }}" class="btn btn-sm applications-link">📋 Mis candidaturas</a>
           </div>
           <div class="dropdown mb-4 text-end">
-            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="languageDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+            <button class="btn btn-sm language-toggle dropdown-toggle" type="button" id="languageDropdown" data-bs-toggle="dropdown" aria-expanded="false">
               {{ t.language_label }}: {{ languages[lang] }}
             </button>
             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="languageDropdown">
