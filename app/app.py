@@ -389,7 +389,8 @@ def ensure_applications_table(conn, is_postgres):
                 contract_type TEXT,
                 created TEXT,
                 redirect_url TEXT,
-                description TEXT
+                description TEXT,
+                source TEXT NOT NULL DEFAULT 'adzuna'
             );
             CREATE TABLE IF NOT EXISTS skills (
                 id SERIAL PRIMARY KEY,
@@ -412,10 +413,14 @@ def ensure_applications_table(conn, is_postgres):
             );
             """
         )
+        cur.execute("ALTER TABLE jobs ADD COLUMN IF NOT EXISTS source TEXT NOT NULL DEFAULT 'adzuna'")
         conn.commit()
         cur.close()
         return
 
+    columns = {row[1] for row in conn.execute("PRAGMA table_info(jobs)").fetchall()}
+    if "source" not in columns:
+        conn.execute("ALTER TABLE jobs ADD COLUMN source TEXT NOT NULL DEFAULT 'adzuna'")
     sql = """
         CREATE TABLE IF NOT EXISTS applications (
             job_id INTEGER PRIMARY KEY REFERENCES jobs(id) ON DELETE CASCADE,
@@ -620,6 +625,7 @@ def load_jobs(limit=200, sort=DEFAULT_SORT):
                 jobs.contract_type,
                 jobs.created,
                 jobs.redirect_url,
+                jobs.source,
                 COUNT(skills.id) AS skill_count,
                 COALESCE(STRING_AGG(skills.name, ', '), '') AS skills,
                 COALESCE(MAX(applications.status), '') AS application_status
@@ -683,8 +689,10 @@ def run_refresh():
     if not os.path.exists(INGEST_SCRIPT):
         return False, "No se encuentra ingest.py en el directorio raíz."
 
-    if not os.environ.get("ADZUNA_APP_ID") or not os.environ.get("ADZUNA_APP_KEY"):
-        return False, "Faltan las variables de entorno ADZUNA_APP_ID y/o ADZUNA_APP_KEY."
+    has_adzuna = bool(os.environ.get("ADZUNA_APP_ID") and os.environ.get("ADZUNA_APP_KEY"))
+    has_jooble = bool(os.environ.get("JOOBLE_API_KEY"))
+    if not (has_adzuna or has_jooble):
+        return False, "Configura las credenciales de Adzuna o JOOBLE_API_KEY para importar ofertas."
 
     try:
         result = subprocess.run(
@@ -699,13 +707,9 @@ def run_refresh():
 
     if result.returncode != 0:
         error_detail = (result.stderr or result.stdout or "Unknown error").strip()
-        # Adzuna credentials are query parameters; never persist them in server logs.
-        error_detail = re.sub(
-            r"([?&](?:app_key|app_id)=)[^&\s]+",
-            r"\1[REDACTED]",
-            error_detail,
-            flags=re.IGNORECASE,
-        )
+        # Redact query-string credentials and Jooble's path-based API key.
+        error_detail = re.sub(r"([?&](?:app_key|app_id)=)[^&\s]+", r"\1[REDACTED]", error_detail, flags=re.IGNORECASE)
+        error_detail = re.sub(r"(https?://[^/]+/api/)[^/\s]+", r"\1[REDACTED]", error_detail, flags=re.IGNORECASE)
         app.logger.error("ingest.py failed (exit %s): %s", result.returncode, error_detail)
         return False, "No se pudieron actualizar las ofertas. El proveedor puede estar temporalmente no disponible; inténtalo de nuevo más tarde."
 
