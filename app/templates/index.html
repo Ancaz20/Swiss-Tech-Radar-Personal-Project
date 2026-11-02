@@ -447,6 +447,49 @@
         text-decoration: none !important;
         text-decoration-line: none !important;
       }
+      /* Final button alignment and underline reset */
+      .hero .btn,
+      .sort-box .btn,
+      .action-buttons .btn,
+      .hero .language-picker .dropdown-item {
+        display:inline-flex !important;
+        align-items:center !important;
+        justify-content:center !important;
+        text-align:center !important;
+        text-decoration:none !important;
+        text-decoration-line:none !important;
+        vertical-align:middle;
+      }
+      .hero .language-picker .dropdown-item {
+        display:flex !important;
+        width:100%;
+      }
+      .hero a.btn:link,
+      .hero a.btn:visited,
+      .hero a.btn:hover,
+      .hero a.btn:focus,
+      .hero a.btn:focus-visible,
+      .hero a.btn:active,
+      .hero a.btn.active,
+      .action-buttons a.btn:link,
+      .action-buttons a.btn:visited,
+      .action-buttons a.btn:hover,
+      .action-buttons a.btn:focus,
+      .action-buttons a.btn:active,
+      .hero .language-picker a.dropdown-item,
+      .hero .language-picker a.dropdown-item:hover,
+      .hero .language-picker a.dropdown-item:focus,
+      .hero .language-picker a.dropdown-item:active,
+      .hero .language-picker a.dropdown-item.active {
+        text-decoration:none !important;
+        text-decoration-line:none !important;
+      }
+      .hero .btn *,
+      .action-buttons .btn *,
+      .hero .language-picker .dropdown-item * {
+        text-decoration:none !important;
+        text-decoration-line:none !important;
+      }
     </style>
   </head>
   <body>
