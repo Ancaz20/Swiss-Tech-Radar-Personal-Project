@@ -50,28 +50,76 @@ body{font-family:Inter,"Segoe UI",system-ui,-apple-system,sans-serif;letter-spac
 .pantryPanel .actions button[data-act="fav"]:hover{background:#c9a24f;color:#2d2530}
 .pantryPanel .danger{background:#922f50;color:#fff;border-color:#922f50}
 .pantryPanel .editForm{border-color:#c9c0cb}
+
+/* Rediseño supermercado: cabecera ilustrada y navegación lateral */
+body{padding:18px;background:radial-gradient(ellipse at 50% 0%,#63345f 0%,#321936 45%,#1d1028 100%);color:#fff}
+main{max-width:1480px}
+header{display:flex;align-items:center;justify-content:center;min-height:190px;margin:0 0 18px;padding:24px 250px 28px;position:relative;overflow:visible;text-align:center;border:1px solid rgba(225,177,94,.28);border-radius:22px;background:radial-gradient(ellipse at 50% 120%,rgba(130,69,126,.7),transparent 55%),linear-gradient(125deg,#51264e,#29132f 58%,#4b2348);box-shadow:0 12px 35px rgba(0,0,0,.2)}
+header:before,header:after{content:"";position:absolute;pointer-events:none;border:1px solid rgba(224,174,91,.55);width:120%;height:100px;border-radius:50%;left:-10%;bottom:-73px;transform:rotate(-5deg)}
+header:after{border-color:rgba(205,154,202,.22);bottom:-85px;transform:rotate(4deg)}
+header>div:first-child{z-index:1}
+header h1{font-family:Georgia,serif;font-size:clamp(2.4rem,5vw,4.1rem);font-weight:600;letter-spacing:.01em;margin:0;color:#fff0d6;text-shadow:0 3px 14px #16091d}
+header>div:first-child:before{content:"🛒";display:block;font-family:system-ui;font-size:2.4rem;margin-bottom:3px;filter:drop-shadow(0 3px 5px #16091d)}
+header>div:first-child p{margin:7px 0 0;color:#e7c4df;font-size:1rem}
+header>div:first-child:after{content:"🥖 🥬 🍅";position:absolute;left:5%;top:44%;font-size:clamp(1.6rem,3vw,2.8rem);filter:drop-shadow(0 4px 5px #16091d)}
+.headerActions{position:absolute;right:18px;top:18px;z-index:3}
+.accountMenu{top:58px}
+.workspace{grid-template-columns:230px minmax(0,1fr);gap:16px;align-items:start}
+.mainColumn{grid-column:2;grid-row:1}
+.sideColumn{grid-column:1;grid-row:1;position:sticky;top:14px;display:flex;flex-direction:column;gap:8px}
+.navCard{background:rgba(38,18,47,.92);border:1px solid #87517f;border-radius:18px;padding:12px;box-shadow:0 10px 28px #130a1d55}
+.navCard .navLink{display:flex;align-items:center;gap:12px;width:100%;padding:12px 13px;margin:3px 0;border:0;background:transparent;color:#f8edf8;text-decoration:none;border-radius:11px;font-weight:600}
+.navCard .navLink:hover,.navCard .navLink.active{background:#71356f;color:#ffe1a0}
+.navCard .navLink span:first-child{font-size:1.2rem;width:25px;text-align:center}
+.sideCard{margin:0;background:rgba(42,26,62,.95);border-color:#80507e}
+.panel{background:rgba(48,26,57,.94);border-color:#825080}
+.addToggle{color:#ffe3a1}
+.shoppingPanel{border-color:#a56c9d;box-shadow:0 8px 24px #160b2055}
+.pantryPanel{background:linear-gradient(145deg,#e2dce4,#d8d1da);border-color:#b9aebb}
+.listPanel{padding:18px;margin:12px 0;border-radius:18px}
+.listPanelHeader h2{font-size:1.35rem}
+.listPanelHeader h2:before{margin-right:7px}
+.shoppingPanel .listPanelHeader h2{color:#f2d7ff}
+.pantryPanel .listPanelHeader h2{color:#514653}
+button:not(.secondary):not(.danger){background:linear-gradient(180deg,#f4d18b,#d7a54e);color:#35213a;border-color:#c8943e}
+.accountToggle{background:#6c3471!important;color:#fff!important;border-color:#d6ad67!important}
+.pantryPanel button:not(.secondary):not(.danger){background:#66596b;color:#fff;border-color:#66596b}
+.pantryPanel .actions button[data-act="fav"]{background:#d4af62;color:#332a36;border-color:#b9954d}
+.sideCard .sideToggle{color:#ffe3a1}
+.utilityPanel{border-radius:15px}
+@media(max-width:1050px){.listsGrid{grid-template-columns:1fr}}
+@media(max-width:820px){header{padding:28px 18px;min-height:165px}.headerActions{top:10px;right:10px}.workspace{grid-template-columns:1fr}.mainColumn,.sideColumn{grid-column:1;grid-row:auto}.sideColumn{position:static;display:grid;grid-template-columns:1fr}.navCard{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.navCard .navLink{font-size:.9rem;padding:9px}}
+@media(max-width:480px){body{padding:10px}header{margin-top:48px;padding:18px 12px;min-height:145px}header h1{font-size:2.25rem}header>div:first-child:after{display:none}.navCard{grid-template-columns:1fr 1fr}.listPanel{padding:12px}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script></head>
 <body><main>
-<header><div><h1>🏠 Mi Despensa</h1><p class="muted">Tu inventario, guardado y sincronizado en la nube</p></div><div class="headerActions"><a href="index.html">← Inicio</a><button class="accountToggle" id="accountToggle">Iniciar sesión</button></div><section class="panel accountMenu hidden" id="accountPanel"><h2>Tu cuenta</h2>
+<header class="marketHeader"><div><h1>Mi Despensa</h1><p class="muted">Lista de la compra y control de tu despensa</p></div><div class="headerActions"><a href="index.html">← Inicio</a><button class="accountToggle" id="accountToggle">Iniciar sesión</button></div><section class="panel accountMenu hidden" id="accountPanel"><h2>Tu cuenta</h2>
 <div id="signedOut"><p class="muted">Inicia sesión con Google para conservar tu despensa y acceder desde cualquier dispositivo.</p><button id="googleLogin">Continuar con Google</button></div>
 <div id="signedIn" class="hidden"><div class="account"><span id="userEmail" class="pill"></span><button class="secondary" id="logout">Cerrar sesión</button></div>
 <p class="muted" id="cloudStatus">Conectando con tu despensa…</p>
 <div class="toolbar"><label for="pantrySelect" class="muted">Despensa activa</label><select id="pantrySelect" style="flex:1;min-width:180px"></select></div>
 </div></section></header>
 
-<div class="workspace">
+<div class="workspace" id="inicio">
 <div class="mainColumn">
 <section class="panel"><button type="button" class="addToggle" id="addToggle"><span>＋ Agregar artículo</span><span id="addChevron">⌄</span></button><form id="add" class="form addForm" hidden><input id="name" placeholder="Nombre del artículo" required maxlength="80"><select id="category"><option>Alimentos</option><option>Bebidas</option><option>Despensa</option><option>Congelados</option><option>Productos de Limpieza</option><option>Artículos de Aseo</option><option>Especias</option><option>Otros</option></select><input id="qty" type="number" min="0" step=".01" value="1" required><select id="unit"><option>uds</option><option>kg</option><option>g</option><option>L</option><option>ml</option><option>packs</option><option>cajas</option><option>botellas</option><option>bolsas</option></select><input id="store" placeholder="Tienda donde lo compras (opcional)" maxlength="80"><input id="image" type="url" placeholder="URL de imagen (opcional)"><button>Añadir</button></form></section>
 
 <div class="listsGrid">
-<section class="listPanel shoppingPanel"><div class="listPanelHeader"><h2>🛒 Lista de la compra</h2><span id="shoppingCount" class="listCount">0 artículos</span></div><div class="toolbar"><input id="shoppingSearch" placeholder="Buscar en la compra..."><select id="shoppingFilter"><option value="all">Todos</option><option value="fav">Favoritos</option><option value="low">Sin stock</option></select></div><div id="shoppingItems" class="items"></div></section>
-<section class="listPanel pantryPanel"><div class="listPanelHeader"><h2>🏠 Despensa</h2><span id="pantryCount" class="listCount">0 artículos</span></div><div class="toolbar"><input id="pantrySearch" placeholder="Buscar en la despensa..."><select id="pantryFilter"><option value="all">Todos</option><option value="fav">Favoritos</option><option value="low">Sin stock</option></select></div><div id="pantryItems" class="items"></div></section>
+<section class="listPanel shoppingPanel" id="shoppingSection"><div class="listPanelHeader"><h2>🛒 Lista de la compra</h2><span id="shoppingCount" class="listCount">0 artículos</span></div><div class="toolbar"><input id="shoppingSearch" placeholder="Buscar en la compra..."><select id="shoppingFilter"><option value="all">Todos</option><option value="fav">Favoritos</option><option value="low">Sin stock</option></select></div><div id="shoppingItems" class="items"></div></section>
+<section class="listPanel pantryPanel" id="pantrySection"><div class="listPanelHeader"><h2>🏠 Despensa</h2><span id="pantryCount" class="listCount">0 artículos</span></div><div class="toolbar"><input id="pantrySearch" placeholder="Buscar en la despensa..."><select id="pantryFilter"><option value="all">Todos</option><option value="fav">Favoritos</option><option value="low">Sin stock</option></select></div><div id="pantryItems" class="items"></div></section>
 </div>
-<section class="panel utilityPanel"><div class="stats"><span id="count">0 artículos</span><span id="low">0 sin stock</span><span id="boughtCount">0 en la despensa</span></div><div class="toolbar"><button class="secondary" id="export">Exportar copia</button><button class="secondary" id="importBtn">Importar</button><input id="file" type="file" accept="application/json" class="hidden"></div></section>
+<section class="panel utilityPanel" id="statsSection"><div class="stats"><span id="count">0 artículos</span><span id="low">0 sin stock</span><span id="boughtCount">0 en la despensa</span></div><div class="toolbar"><button class="secondary" id="export">Exportar copia</button><button class="secondary" id="importBtn">Importar</button><input id="file" type="file" accept="application/json" class="hidden"></div></section>
 </div>
 <aside class="sideColumn">
-<section class="sideCard"><button type="button" class="sideToggle" id="inviteToggle"><span>Compartir con otra cuenta Google</span><span id="inviteChevron">⌄</span></button><div class="sideContent" id="inviteContent" hidden><section id="invitePanel" class="hidden"><p class="muted">Invita a alguien usando el mismo correo con el que iniciará sesión. La invitación se activará cuando esa persona entre en Mi Despensa.</p><div class="toolbar"><input id="inviteEmail" type="email" placeholder="correo@gmail.com"><button id="sendInvite">Invitar a esta despensa</button></div><p class="muted" id="inviteStatus"></p></section><p class="muted" id="inviteLoginHint">Inicia sesión con Google para invitar a otra persona.</p></div></section>
+<nav class="navCard" aria-label="Navegación principal">
+<a class="navLink active" href="#inicio"><span>⌂</span>Inicio</a>
+<a class="navLink" href="#shoppingSection"><span>🛒</span>Lista de la compra</a>
+<a class="navLink" href="#pantrySection"><span>▦</span>Despensa</a>
+<a class="navLink" href="#shoppingSection" id="favoritesNav"><span>☆</span>Favoritos</a>
+<a class="navLink" href="#statsSection"><span>▥</span>Estadísticas</a>
+<a class="navLink" href="#sharingSection"><span>⚙</span>Compartir y ajustes</a>
+</nav>
+<section class="sideCard" id="sharingSection"><button type="button" class="sideToggle" id="inviteToggle"><span>Compartir con otra cuenta Google</span><span id="inviteChevron">⌄</span></button><div class="sideContent" id="inviteContent" hidden><section id="invitePanel" class="hidden"><p class="muted">Invita a alguien usando el mismo correo con el que iniciará sesión. La invitación se activará cuando esa persona entre en Mi Despensa.</p><div class="toolbar"><input id="inviteEmail" type="email" placeholder="correo@gmail.com"><button id="sendInvite">Invitar a esta despensa</button></div><p class="muted" id="inviteStatus"></p></section><p class="muted" id="inviteLoginHint">Inicia sesión con Google para invitar a otra persona.</p></div></section>
 <section class="sideCard" id="legacySharing"><button type="button" class="sideToggle" id="legacyToggle"><span>Compartir mediante enlace privado</span><span id="legacyChevron">⌄</span></button><div class="sideContent" id="legacyContent" hidden><p class="muted" id="shareStatus">También puedes compartir una lista mediante enlace. Cualquier persona que tenga el enlace podrá editarla.</p><div class="toolbar"><button id="createShare">Crear enlace compartido</button><input id="inviteUrl" type="url" placeholder="Pega aquí un enlace de invitación"><button class="secondary" id="joinShare">Unirme a una lista</button><button class="secondary hidden" id="copyShare">Copiar enlace</button></div></div></section>
 </aside>
 </div>
