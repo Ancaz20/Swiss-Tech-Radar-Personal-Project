@@ -57,3 +57,19 @@ python -m unittest discover -v
 - No subas `app/.env` ni credenciales al repositorio.
 - En Docker Compose, las variables críticas no tienen contraseñas ni claves secretas predeterminadas: deben definirse en `app/.env`.
 - El servicio PostgreSQL solo es accesible desde la red interna de Docker Compose.
+
+## Compatibilidad con tu perfil
+
+Cada oferta muestra una puntuación orientativa basada en las habilidades detectadas en el anuncio y en `PROFILE_SKILLS`. La lista predeterminada incluye Java, Spring, Python, SQL, PostgreSQL, Docker, AWS, Azure, TypeScript, React y Git. Puedes personalizarla en `app/.env`, separando las tecnologías por comas.
+
+La puntuación mide coincidencias de tecnologías, no la probabilidad real de conseguir el puesto ni la adecuación completa de experiencia, idioma o permisos de trabajo.
+
+## Seguimiento de candidaturas
+
+- Pulsa **Guardar** en cualquier oferta para añadirla a tu seguimiento.
+- Abre **Mis candidaturas** para revisar las ofertas guardadas.
+- Gestiona el estado: guardada, solicitada, entrevista, oferta recibida, descartada o archivada.
+- Añade notas de contacto, fechas, entrevistas y próximos pasos.
+- Los registros se almacenan en la misma base de datos SQLite o PostgreSQL y permanecen aunque actualices las ofertas.
+
+La tabla `applications` se crea automáticamente al abrir la aplicación; no hace falta borrar ni recrear la base de datos.
