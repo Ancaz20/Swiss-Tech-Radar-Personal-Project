@@ -39,7 +39,7 @@ SUPPORTED_LANGUAGES = {
     "fr": "Français",
 }
 DEFAULT_LANG = "es"
-SUPPORTED_SORTS = {"date", "location", "company", "skills"}
+SUPPORTED_SORTS = {"date", "location", "company", "skills", "match"}
 DEFAULT_SORT = "date"
 
 TRANSLATIONS = {
@@ -76,6 +76,8 @@ TRANSLATIONS = {
         "sort_location_label": "Location",
         "sort_company_label": "Company",
         "sort_skills_label": "Shared skills",
+        "sort_match_label": "Best profile match",
+        "match_score_label": "Profile match",
     },
     "es": {
         "page_title": "Radar Tecnológico Suiza",
@@ -110,6 +112,8 @@ TRANSLATIONS = {
         "sort_location_label": "Ubicación",
         "sort_company_label": "Empresa",
         "sort_skills_label": "Skills en común",
+        "sort_match_label": "Mayor compatibilidad",
+        "match_score_label": "Compatibilidad con tu perfil",
     },
     "de": {
         "page_title": "Swiss Tech Radar",
@@ -144,6 +148,8 @@ TRANSLATIONS = {
         "sort_location_label": "Ort",
         "sort_company_label": "Firma",
         "sort_skills_label": "Gemeinsame Skills",
+        "sort_match_label": "Beste Profilübereinstimmung",
+        "match_score_label": "Profilübereinstimmung",
     },
     "fr": {
         "page_title": "Swiss Tech Radar",
@@ -178,6 +184,8 @@ TRANSLATIONS = {
         "sort_location_label": "Lieu",
         "sort_company_label": "Entreprise",
         "sort_skills_label": "Compétences partagées",
+        "sort_match_label": "Meilleure compatibilité",
+        "match_score_label": "Compatibilité avec votre profil",
     },
 }
 
@@ -597,12 +605,14 @@ def load_jobs(limit=200, sort=DEFAULT_SORT):
         "location": "jobs.location COLLATE NOCASE ASC, jobs.created DESC",
         "company": "jobs.company COLLATE NOCASE ASC, jobs.created DESC",
         "skills": "skill_count DESC, jobs.created DESC",
+        "match": "jobs.created DESC",
     }.get(sort, "jobs.created DESC")
     postgres_order_clause = {
         "date": "jobs.created DESC",
         "location": "LOWER(jobs.location) ASC, jobs.created DESC",
         "company": "LOWER(jobs.company) ASC, jobs.created DESC",
         "skills": "skill_count DESC, jobs.created DESC",
+        "match": "jobs.created DESC",
     }.get(sort, "jobs.created DESC")
 
     if database_url:
@@ -641,7 +651,10 @@ def load_jobs(limit=200, sort=DEFAULT_SORT):
             rows = cur.fetchall()
             cols = [d[0] for d in cur.description]
             result = [dict(zip(cols, r)) for r in rows]
-            return enrich_jobs(result)
+            enriched = enrich_jobs(result)
+            if sort == "match":
+                enriched.sort(key=lambda job: job["match_score"], reverse=True)
+            return enriched
         finally:
             conn.close()
 
@@ -679,7 +692,10 @@ def load_jobs(limit=200, sort=DEFAULT_SORT):
             """,
             (limit,)
         )
-        return enrich_jobs(cursor.fetchall())
+        enriched = enrich_jobs(cursor.fetchall())
+        if sort == "match":
+            enriched.sort(key=lambda job: job["match_score"], reverse=True)
+        return enriched
     finally:
         conn.close()
 
