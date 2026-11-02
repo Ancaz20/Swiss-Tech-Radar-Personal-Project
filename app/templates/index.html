@@ -419,6 +419,34 @@
         color:#1e293b !important;
         background-color:#fff !important;
       }
+      /* Force no underline on every button-style link, including all interactive states */
+      a.btn,
+      a.btn:link,
+      a.btn:visited,
+      a.btn:hover,
+      a.btn:focus,
+      a.btn:focus-visible,
+      a.btn:active,
+      a.btn.active,
+      a.dropdown-item,
+      a.dropdown-item:link,
+      a.dropdown-item:visited,
+      a.dropdown-item:hover,
+      a.dropdown-item:focus,
+      a.dropdown-item:active,
+      button.btn,
+      button.btn:hover,
+      button.btn:focus,
+      button.btn:active {
+        text-decoration: none !important;
+        text-decoration-line: none !important;
+        text-decoration-thickness: 0 !important;
+      }
+      a.btn *,
+      a.dropdown-item * {
+        text-decoration: none !important;
+        text-decoration-line: none !important;
+      }
     </style>
   </head>
   <body>
