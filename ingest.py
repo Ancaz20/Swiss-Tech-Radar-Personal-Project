@@ -36,7 +36,8 @@ STACK_FOCUS = os.environ.get("STACK_FOCUS")
 APP_ID = os.environ.get("ADZUNA_APP_ID")
 APP_KEY = os.environ.get("ADZUNA_APP_KEY")
 COUNTRY = "ch"  # Switzerland
-DB_PATH = "swiss_tech_radar.db"
+PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
+DB_PATH = os.path.join(PROJECT_ROOT, "swiss_tech_radar.db")
 
 # Keywords used for simple skill-matching against title + description.
 # Extend this list as you notice more relevant terms in real postings.
@@ -99,7 +100,7 @@ def build_search_query(search_term):
     if not focus_terms:
         return search_term
 
-    return search_term
+    return " ".join([search_term, *focus_terms])
 
 
 def matches_stack_focus(text):
@@ -173,7 +174,7 @@ def get_connection():
 
     # SQLite fallback
     conn = sqlite3.connect(DB_PATH)
-    with open("schema.sql") as f:
+    with open(os.path.join(PROJECT_ROOT, "schema.sql"), encoding="utf-8") as f:
         conn.executescript(f.read())
     return conn
 
@@ -360,7 +361,6 @@ def main():
         )
 
     conn = get_connection()
-    reset_database(conn)
 
     for term in SEARCH_TERMS:
         query = build_search_query(term)
