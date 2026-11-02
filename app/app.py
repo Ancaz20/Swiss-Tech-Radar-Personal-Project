@@ -698,8 +698,16 @@ def run_refresh():
         return False, "ingest.py tardó demasiado y se canceló."
 
     if result.returncode != 0:
-        app.logger.error("ingest.py failed (exit %s): %s", result.returncode, (result.stderr or result.stdout or "Unknown error").strip())
-        return False, "No se pudieron actualizar las ofertas. Revisa los registros del servidor."
+        error_detail = (result.stderr or result.stdout or "Unknown error").strip()
+        # Adzuna credentials are query parameters; never persist them in server logs.
+        error_detail = re.sub(
+            r"([?&](?:app_key|app_id)=)[^&\\s]+",
+            r"\\1[REDACTED]",
+            error_detail,
+            flags=re.IGNORECASE,
+        )
+        app.logger.error("ingest.py failed (exit %s): %s", result.returncode, error_detail)
+        return False, "No se pudieron actualizar las ofertas. El proveedor puede estar temporalmente no disponible; inténtalo de nuevo más tarde."
 
     return True, result.stdout.strip()
 
