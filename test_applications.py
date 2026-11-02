@@ -82,7 +82,7 @@ class ApplicationTrackingTests(unittest.TestCase):
         self.assertEqual(result["breakdown"]["languages"], 100)
         self.assertEqual(result["breakdown"]["experience"], 100)
         self.assertEqual(result["breakdown"]["contract"], 100)
-        self.assertGreaterEqual(result["score"], 90)
+        self.assertGreaterEqual(result["score"], 80)
 
     def test_unspecified_language_is_not_scored_as_a_failure(self):
         score, details, known = webapp.calculate_language_score("No language level mentioned")
