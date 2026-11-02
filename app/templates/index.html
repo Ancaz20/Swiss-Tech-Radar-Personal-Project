@@ -379,6 +379,25 @@
           padding-bottom: 2rem;
         }
       }
+      /* Center button and link labels; remove browser/Bootstrap underlines */
+      .hero .btn,
+      .hero .btn a,
+      .hero .language-picker .dropdown-item,
+      .sort-box .btn,
+      .action-buttons .btn {
+        text-align:center !important;
+        text-decoration:none !important;
+      }
+      .hero .language-picker .dropdown-item:hover,
+      .hero .language-picker .dropdown-item:focus,
+      .hero .language-picker .dropdown-item:active,
+      .hero .language-picker .dropdown-item.active {
+        text-decoration:none !important;
+      }
+      .hero .language-picker .dropdown-toggle {
+        text-align:center !important;
+        text-decoration:none !important;
+      }
       /* Keep the language selector and selected option in the same gold as Refresh */
       .hero .language-picker > #languageDropdown,
       .hero .language-picker > #languageDropdown:focus,
