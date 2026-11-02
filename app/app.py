@@ -295,7 +295,7 @@ def calculate_language_score(text):
             detail = f"{language}: no indicado en tu perfil (se exige {required_level})"
         else:
             gap = LEVEL_RANK[required_level] - LEVEL_RANK[actual]
-            score = 100 if gap <= 0 else max(0, 100 - gap * 35)
+            score = 100 if gap <= 0 else max(0, 100 - gap * 25)
             detail = f"{language}: tu nivel {actual}, requisito {required_level}"
         scores.append(score)
         details.append(detail)
