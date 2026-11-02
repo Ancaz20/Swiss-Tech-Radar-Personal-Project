@@ -15,7 +15,7 @@ class ApplicationTrackingTests(unittest.TestCase):
         webapp.DB_PATH = os.path.join(self.tmpdir.name, "test.db")
         conn = sqlite3.connect(webapp.DB_PATH)
         conn.execute("PRAGMA foreign_keys = ON")
-        with open(os.path.join(os.path.dirname(os.path.dirname(__file__)), "schema.sql"), encoding="utf-8") as schema:
+        with open(os.path.join(os.path.dirname(__file__), "schema.sql"), encoding="utf-8") as schema:
             conn.executescript(schema.read())
         conn.execute(
             """INSERT INTO jobs (adzuna_id, title, company, location, created, redirect_url, description)
