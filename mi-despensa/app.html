@@ -120,6 +120,13 @@ header.marketHeader{min-height:205px;padding:24px 220px 28px;display:grid;grid-t
 @media(max-width:1100px){.listsGrid{grid-template-columns:1fr}.listPanel{min-height:0}}
 @media(max-width:820px){header.marketHeader{grid-template-columns:1fr;min-height:160px;padding:22px 12px;gap:4px}.marketBrand{grid-column:1;grid-row:1;min-width:0}.marketBrand h1{font-size:2.4rem}.marketArt{display:none}.workspace{grid-template-columns:1fr}.navCard{min-height:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.navCard .accountNav{margin-top:0;border:0;padding-top:9px}.listsGrid{grid-template-columns:1fr}}
 @media(max-width:480px){.marketBrand h1{font-size:2rem}.headerActions{top:8px;right:8px}.marketHeader{margin-top:45px!important}}
+
+/* Sin menú lateral de Inicio: contenido principal centrado y compartir a la derecha */
+.workspace{grid-template-columns:minmax(0,1fr) 310px;gap:18px}
+.mainColumn{grid-column:1;grid-row:1}
+.sideColumn{grid-column:2;grid-row:1;position:sticky;top:14px;display:flex;flex-direction:column;gap:12px}
+.sideCard{margin:0}
+@media(max-width:820px){.workspace{grid-template-columns:1fr}.mainColumn,.sideColumn{grid-column:1;grid-row:auto}.sideColumn{position:static;display:grid;grid-template-columns:1fr}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script></head>
 <body><main>
@@ -141,15 +148,7 @@ header.marketHeader{min-height:205px;padding:24px 220px 28px;display:grid;grid-t
 <section class="panel utilityPanel" id="statsSection"><div class="stats"><span id="count">0 artículos</span><span id="low">0 sin stock</span><span id="boughtCount">0 en la despensa</span></div><div class="toolbar"><button class="secondary" id="export">Exportar copia</button><button class="secondary" id="importBtn">Importar</button><input id="file" type="file" accept="application/json" class="hidden"></div></section>
 </div>
 <aside class="sideColumn">
-<nav class="navCard" aria-label="Navegación principal">
-<a class="navLink active" href="#inicio"><span>⌂</span>Inicio</a>
-<a class="navLink" href="#shoppingSection"><span>🛒</span>Lista de la compra</a>
-<a class="navLink" href="#pantrySection"><span>▦</span>Despensa</a>
-<a class="navLink" href="#shoppingSection" id="favoritesNav"><span>☆</span>Favoritos</a>
-<a class="navLink" href="#statsSection"><span>▥</span>Estadísticas</a>
-<a class="navLink" href="#sharingSection"><span>⚙</span>Compartir y ajustes</a>
-<a class="navLink accountNav" href="#accountToggle"><span>◉</span>Mi cuenta</a>
-</nav>
+
 <section class="sideCard" id="sharingSection"><button type="button" class="sideToggle" id="inviteToggle"><span>Compartir con otra cuenta Google</span><span id="inviteChevron">⌄</span></button><div class="sideContent" id="inviteContent" hidden><section id="invitePanel" class="hidden"><p class="muted">Invita a alguien usando el mismo correo con el que iniciará sesión. La invitación se activará cuando esa persona entre en Mi Despensa.</p><div class="toolbar"><input id="inviteEmail" type="email" placeholder="correo@gmail.com"><button id="sendInvite">Invitar a esta despensa</button></div><p class="muted" id="inviteStatus"></p></section><p class="muted" id="inviteLoginHint">Inicia sesión con Google para invitar a otra persona.</p></div></section>
 <section class="sideCard" id="legacySharing"><button type="button" class="sideToggle" id="legacyToggle"><span>Compartir mediante enlace privado</span><span id="legacyChevron">⌄</span></button><div class="sideContent" id="legacyContent" hidden><p class="muted" id="shareStatus">También puedes compartir una lista mediante enlace. Cualquier persona que tenga el enlace podrá editarla.</p><div class="toolbar"><button id="createShare">Crear enlace compartido</button><input id="inviteUrl" type="url" placeholder="Pega aquí un enlace de invitación"><button class="secondary" id="joinShare">Unirme a una lista</button><button class="secondary hidden" id="copyShare">Copiar enlace</button></div></div></section>
 </aside>
