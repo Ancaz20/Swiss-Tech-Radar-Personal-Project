@@ -1,75 +1,59 @@
-# Swiss Tech Radar — Docker + Postgres
+# Swiss Tech Radar
 
-Instrucciones rápidas para ejecutar la app con Docker y PostgreSQL.
+Aplicación Flask para recopilar y consultar ofertas junior de tecnología en Suiza mediante la API de Adzuna. Los datos se guardan en PostgreSQL con Docker Compose o en SQLite durante el desarrollo local.
 
-Prerequisitos
-- Docker y Docker Compose instalados.
+## Requisitos
 
-Levantar la aplicación (desarrollo local)
+- Python 3.11 o superior.
+- Docker y Docker Compose (para la ejecución contenerizada).
+- Credenciales de API de Adzuna: `ADZUNA_APP_ID` y `ADZUNA_APP_KEY`.
+
+## Ejecutar con Docker Compose
+
+1. Copia `app/.env.example` a `app/.env`.
+2. Sustituye todos los valores de ejemplo por credenciales y contraseñas reales. Genera una clave Flask aleatoria; no reutilices los valores del ejemplo.
+3. Desde la carpeta `app`, ejecuta:
 
 ```bash
-cd app
 docker compose up --build
 ```
 
-Esto levantará dos servicios:
-- `web`: la app Flask escuchando en el puerto `5000`.
-- `db`: PostgreSQL con usuario `postgres`, contraseña `example`, base `swiss`.
+4. Abre http://localhost:5000.
 
-Variables de entorno importantes
-- `FLASK_SECRET_KEY`: clave secreta para Flask (por defecto `dev_secret_key` en compose).
-- `DATABASE_URL`: si quieres apuntar a otra base de datos, exporta la URL (ej: `postgresql://user:pass@host:5432/dbname`).
-- `ADZUNA_APP_ID` y `ADZUNA_APP_KEY`: necesarias para que `ingest.py` funcione y pueda descargar ofertas.
+Docker Compose construye la imagen usando la raíz del repositorio como contexto para incluir tanto la aplicación como `ingest.py` y `schema.sql`. PostgreSQL no publica su puerto al host; la aplicación accede a él por la red interna de Compose.
 
-Variables por archivo `.env`
+## Ejecución local
 
-Copiar el archivo de ejemplo y completar valores:
+Desde la raíz del repositorio:
 
 ```bash
-cd app
-cp .env.example .env
-```
-
-No subas `.env` a control de versiones — contiene secretos.
-
-Uso de `ingest.py`
-
-El script `ingest.py` detecta `DATABASE_URL` automáticamente y volcará los datos en PostgreSQL cuando esté presente; si no, usará `swiss_tech_radar.db` (SQLite).
-
-Ejecutar ingest manualmente dentro del contenedor web:
-
-```bash
-docker compose exec web python /app/ingest.py
-```
-
-Notas
-- Para producción cambia la contraseña de Postgres y maneja secretos de forma segura.
-- Si `ingest.py` necesita ajustes para campos adicionales, puedo adaptarlo más.
-# Swiss Tech Radar — Run locally
-
-Instrucciones rápidas para ejecutar la app localmente.
-
-1. Crear un entorno virtual (Windows PowerShell):
-
-```powershell
 python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-```
-
-2. Instalar dependencias:
-
-```powershell
+# Windows: .venv\Scripts\Activate.ps1
+# macOS/Linux: source .venv/bin/activate
 pip install -r requirements.txt
-```
-
-3. Ejecutar la app:
-
-```powershell
 python app/app.py
 ```
 
-4. Abrir en el navegador: http://127.0.0.1:5000
+Sin `DATABASE_URL`, la aplicación y el proceso de ingesta utilizan SQLite en la raíz del repositorio. Define `ADZUNA_APP_ID` y `ADZUNA_APP_KEY` antes de solicitar una actualización. Puedes configurar `STACK_FOCUS` con términos separados por comas.
 
-Notas:
-- Define las variables de entorno `ADZUNA_APP_ID` y `ADZUNA_APP_KEY` antes de refrescar datos.
-- Para desarrollo puedes exportar `FLASK_DEBUG=true` para activar modo depuración.
+## Actualizar ofertas
+
+En la interfaz, utiliza el botón **Actualizar ofertas**. La acción usa POST y un token CSRF. También puedes ejecutar la ingesta manualmente desde la raíz:
+
+```bash
+python ingest.py
+```
+
+La ingesta conserva las ofertas existentes y añade las nuevas; no vacía la base de datos antes de consultar la API.
+
+## Pruebas
+
+```bash
+python -m unittest discover -v
+```
+
+## Configuración y seguridad
+
+- No subas `app/.env` ni credenciales al repositorio.
+- En Docker Compose, las variables críticas no tienen contraseñas ni claves secretas predeterminadas: deben definirse en `app/.env`.
+- El servicio PostgreSQL solo es accesible desde la red interna de Docker Compose.
