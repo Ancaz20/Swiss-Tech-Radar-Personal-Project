@@ -195,6 +195,201 @@ def get_translations(lang):
     return TRANSLATIONS.get(lang, TRANSLATIONS[DEFAULT_LANG])
 
 
+APPLICATION_STATUSES = {
+    "saved": "Guardada",
+    "applied": "Solicitada",
+    "interview": "Entrevista",
+    "offer": "Oferta recibida",
+    "rejected": "Descartada",
+    "archived": "Archivada",
+}
+DEFAULT_PROFILE_SKILLS = "java,spring,python,sql,postgresql,docker,aws,azure,typescript,react,git"
+
+
+def get_profile_skills():
+    configured = os.environ.get("PROFILE_SKILLS", DEFAULT_PROFILE_SKILLS)
+    return {skill.strip().lower() for skill in configured.split(",") if skill.strip()}
+
+
+def calculate_match_score(job_skills, profile_skills=None):
+    """Estimate skill overlap; it is guidance, not a hiring prediction."""
+    if isinstance(job_skills, str):
+        skills = {item.strip().lower() for item in job_skills.split(",") if item.strip()}
+    else:
+        skills = {str(item).strip().lower() for item in (job_skills or []) if str(item).strip()}
+    profile = profile_skills if profile_skills is not None else get_profile_skills()
+    profile = {str(item).strip().lower() for item in profile if str(item).strip()}
+    matched = sorted(skills & profile)
+    if not skills or not profile:
+        return 0, matched
+    denominator = max(3, min(6, len(skills)))
+    return min(100, round(len(matched) * 100 / denominator)), matched
+
+
+def ensure_applications_table(conn, is_postgres):
+    sql = """
+        CREATE TABLE IF NOT EXISTS applications (
+            job_id INTEGER PRIMARY KEY REFERENCES jobs(id) ON DELETE CASCADE,
+            status TEXT NOT NULL CHECK (
+                status IN ('saved', 'applied', 'interview', 'offer', 'rejected', 'archived')
+            ),
+            notes TEXT NOT NULL DEFAULT '',
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            applied_at TIMESTAMP NULL
+        )
+    """
+    if is_postgres:
+        cur = conn.cursor()
+        cur.execute(sql)
+        conn.commit()
+        cur.close()
+    else:
+        conn.execute(sql)
+        conn.commit()
+
+
+def get_app_database():
+    database_url = os.environ.get("DATABASE_URL", "").strip()
+    if database_url:
+        conn = psycopg2.connect(database_url)
+        ensure_applications_table(conn, True)
+        return conn, True
+    if not os.path.exists(DB_PATH):
+        return None, False
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA foreign_keys = ON")
+    ensure_applications_table(conn, False)
+    return conn, False
+
+
+def save_application(job_id, status="saved", notes=""):
+    if status not in APPLICATION_STATUSES:
+        raise ValueError("Estado de candidatura no válido.")
+    notes = (notes or "").strip()
+    if len(notes) > 4000:
+        raise ValueError("Las notas no pueden superar los 4000 caracteres.")
+    conn, is_postgres = get_app_database()
+    if conn is None:
+        raise LookupError("No existe todavía una base de datos con ofertas.")
+    try:
+        if is_postgres:
+            cur = conn.cursor()
+            cur.execute("""
+                INSERT INTO applications (job_id, status, notes, applied_at)
+                SELECT id, %s, %s, CASE WHEN %s = 'applied' THEN CURRENT_TIMESTAMP ELSE NULL END
+                FROM jobs WHERE id = %s
+                ON CONFLICT (job_id) DO UPDATE SET
+                    status = EXCLUDED.status,
+                    notes = EXCLUDED.notes,
+                    updated_at = CURRENT_TIMESTAMP,
+                    applied_at = COALESCE(
+                        applications.applied_at,
+                        CASE WHEN EXCLUDED.status = 'applied' THEN CURRENT_TIMESTAMP ELSE NULL END
+                    )
+                RETURNING job_id
+            """, (status, notes, status, job_id))
+            result = cur.fetchone()
+            conn.commit()
+            cur.close()
+        else:
+            cur = conn.execute("""
+                INSERT INTO applications (job_id, status, notes, applied_at)
+                SELECT id, ?, ?, CASE WHEN ? = 'applied' THEN CURRENT_TIMESTAMP ELSE NULL END
+                FROM jobs WHERE id = ?
+                ON CONFLICT(job_id) DO UPDATE SET
+                    status = excluded.status,
+                    notes = excluded.notes,
+                    updated_at = CURRENT_TIMESTAMP,
+                    applied_at = COALESCE(
+                        applications.applied_at,
+                        CASE WHEN excluded.status = 'applied' THEN CURRENT_TIMESTAMP ELSE NULL END
+                    )
+            """, (status, notes, status, job_id))
+            result = cur.rowcount
+            conn.commit()
+        if not result:
+            raise LookupError("La oferta ya no existe.")
+    finally:
+        conn.close()
+
+
+def load_applications(status_filter=None):
+    conn, is_postgres = get_app_database()
+    if conn is None:
+        return []
+    try:
+        placeholder = "%s" if is_postgres else "?"
+        aggregate = "STRING_AGG(skills.name, ', ')" if is_postgres else "GROUP_CONCAT(skills.name, ', ')"
+        sql = f"""
+            SELECT jobs.id AS job_id, jobs.title, jobs.company, jobs.location,
+                   jobs.redirect_url, jobs.created, applications.status,
+                   applications.notes, applications.created_at,
+                   applications.updated_at, applications.applied_at,
+                   COALESCE({aggregate}, '') AS skills
+            FROM applications
+            JOIN jobs ON jobs.id = applications.job_id
+            LEFT JOIN job_skills ON job_skills.job_id = jobs.id
+            LEFT JOIN skills ON skills.id = job_skills.skill_id
+        """
+        params = ()
+        if status_filter in APPLICATION_STATUSES:
+            sql += f" WHERE applications.status = {placeholder}"
+            params = (status_filter,)
+        sql += """
+            GROUP BY jobs.id, applications.status, applications.notes,
+                     applications.created_at, applications.updated_at,
+                     applications.applied_at
+            ORDER BY applications.updated_at DESC
+        """
+        if is_postgres:
+            cur = conn.cursor()
+            cur.execute(sql, params)
+            rows = [dict(zip([col[0] for col in cur.description], row)) for row in cur.fetchall()]
+            cur.close()
+        else:
+            rows = [dict(row) for row in conn.execute(sql, params).fetchall()]
+        for row in rows:
+            row["match_score"], row["matched_skills"] = calculate_match_score(row.get("skills", ""))
+        return rows
+    finally:
+        conn.close()
+
+
+def delete_application(job_id):
+    conn, is_postgres = get_app_database()
+    if conn is None:
+        return
+    try:
+        if is_postgres:
+            cur = conn.cursor()
+            cur.execute("DELETE FROM applications WHERE job_id = %s", (job_id,))
+            conn.commit()
+            cur.close()
+        else:
+            conn.execute("DELETE FROM applications WHERE job_id = ?", (job_id,))
+            conn.commit()
+    finally:
+        conn.close()
+
+
+def validate_csrf():
+    submitted = request.form.get("csrf_token", "")
+    expected = session.get("csrf_token", "")
+    return bool(expected and hmac.compare_digest(submitted, expected))
+
+
+def enrich_jobs(rows):
+    enriched = []
+    for row in rows:
+        item = dict(row)
+        item["match_score"], item["matched_skills"] = calculate_match_score(item.get("skills", ""))
+        item["application_status"] = item.get("application_status") or ""
+        enriched.append(item)
+    return enriched
+
+
 def load_jobs(limit=200, sort=DEFAULT_SORT):
     """Devuelve hasta `limit` ofertas, más recientes primero, con sus skills."""
     # Si se proporciona DATABASE_URL, usamos PostgreSQL
@@ -219,6 +414,7 @@ def load_jobs(limit=200, sort=DEFAULT_SORT):
             return []
 
         try:
+            ensure_applications_table(conn, True)
             cur = conn.cursor()
             sql = f"""
             SELECT
@@ -232,10 +428,12 @@ def load_jobs(limit=200, sort=DEFAULT_SORT):
                 jobs.created,
                 jobs.redirect_url,
                 COUNT(skills.id) AS skill_count,
-                COALESCE(STRING_AGG(skills.name, ', '), '') AS skills
+                COALESCE(STRING_AGG(skills.name, ', '), '') AS skills,
+                COALESCE(MAX(applications.status), '') AS application_status
             FROM jobs
             LEFT JOIN job_skills ON job_skills.job_id = jobs.id
             LEFT JOIN skills ON skills.id = job_skills.skill_id
+            LEFT JOIN applications ON applications.job_id = jobs.id
             GROUP BY jobs.id
             ORDER BY {postgres_order_clause}
             LIMIT %s
@@ -244,7 +442,7 @@ def load_jobs(limit=200, sort=DEFAULT_SORT):
             rows = cur.fetchall()
             cols = [d[0] for d in cur.description]
             result = [dict(zip(cols, r)) for r in rows]
-            return result
+            return enrich_jobs(result)
         finally:
             conn.close()
 
@@ -254,7 +452,9 @@ def load_jobs(limit=200, sort=DEFAULT_SORT):
 
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA foreign_keys = ON")
     try:
+        ensure_applications_table(conn, False)
         cursor = conn.execute(
             f"""
             SELECT
@@ -268,17 +468,19 @@ def load_jobs(limit=200, sort=DEFAULT_SORT):
                 jobs.created,
                 jobs.redirect_url,
                 COUNT(skills.id) AS skill_count,
-                COALESCE(GROUP_CONCAT(skills.name, ', '), '') AS skills
+                COALESCE(GROUP_CONCAT(skills.name, ', '), '') AS skills,
+                COALESCE(MAX(applications.status), '') AS application_status
             FROM jobs
             LEFT JOIN job_skills ON job_skills.job_id = jobs.id
             LEFT JOIN skills ON skills.id = job_skills.skill_id
+            LEFT JOIN applications ON applications.job_id = jobs.id
             GROUP BY jobs.id
             ORDER BY {order_clause}
             LIMIT ?
             """,
             (limit,)
         )
-        return cursor.fetchall()
+        return enrich_jobs(cursor.fetchall())
     finally:
         conn.close()
 
@@ -328,6 +530,44 @@ def index():
     )
 
 
+@app.route("/applications")
+def applications():
+    status_filter = request.args.get("status", "")
+    if status_filter not in APPLICATION_STATUSES:
+        status_filter = None
+    items = load_applications(status_filter)
+    return render_template(
+        "applications.html",
+        applications=items,
+        statuses=APPLICATION_STATUSES,
+        selected_status=status_filter or "",
+        csrf_token=session.setdefault("csrf_token", secrets.token_urlsafe(32)),
+    )
+
+
+@app.route("/applications/<int:job_id>", methods=["POST"])
+def update_application(job_id):
+    if not validate_csrf():
+        return "Solicitud no válida. Recarga la página e inténtalo de nuevo.", 400
+    status = request.form.get("status", "saved")
+    notes = request.form.get("notes", "")
+    try:
+        save_application(job_id, status, notes)
+        flash("Candidatura actualizada correctamente.", "success")
+    except (ValueError, LookupError) as exc:
+        flash(str(exc), "danger")
+    return redirect(url_for("applications"))
+
+
+@app.route("/applications/<int:job_id>/delete", methods=["POST"])
+def remove_application(job_id):
+    if not validate_csrf():
+        return "Solicitud no válida. Recarga la página e inténtalo de nuevo.", 400
+    delete_application(job_id)
+    flash("Oferta retirada de tu seguimiento.", "success")
+    return redirect(url_for("applications"))
+
+
 @app.route("/refresh", methods=["POST"])
 def refresh():
     global _last_refresh_at
@@ -335,9 +575,7 @@ def refresh():
     sort = get_sort()
     t = get_translations(lang)
 
-    submitted_token = request.form.get("csrf_token", "")
-    expected_token = session.get("csrf_token", "")
-    if not expected_token or not hmac.compare_digest(submitted_token, expected_token):
+    if not validate_csrf():
         return "Solicitud no válida. Recarga la página e inténtalo de nuevo.", 400
 
     elapsed = time.monotonic() - _last_refresh_at
