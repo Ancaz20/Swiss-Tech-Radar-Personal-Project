@@ -50,6 +50,45 @@ class ApplicationTrackingTests(unittest.TestCase):
         self.assertEqual(items[0]["status"], "interview")
         self.assertEqual(items[0]["notes"], "Entrevista el viernes")
 
+    def test_language_requirement_detects_english_c1(self):
+        self.assertEqual(
+            webapp.detect_language_requirements("Fluent English C1 required"),
+            {"english": "C1"},
+        )
+
+    def test_language_score_rewards_profile_level(self):
+        old = os.environ.get("PROFILE_LANGUAGES")
+        os.environ["PROFILE_LANGUAGES"] = "english:C1"
+        try:
+            score, details, known = webapp.calculate_language_score("English C1 required")
+            self.assertEqual(score, 100)
+            self.assertTrue(known)
+            self.assertIn("english", details[0])
+        finally:
+            if old is None:
+                os.environ.pop("PROFILE_LANGUAGES", None)
+            else:
+                os.environ["PROFILE_LANGUAGES"] = old
+
+    def test_full_match_includes_all_four_factors(self):
+        job = {
+            "title": "Junior Java Developer Internship",
+            "description": "Java, Spring. English C1 required.",
+            "skills": "java, spring",
+            "contract_type": "internship",
+        }
+        result = webapp.calculate_job_match(job)
+        self.assertEqual(set(result["breakdown"]), {"skills", "languages", "experience", "contract"})
+        self.assertEqual(result["breakdown"]["languages"], 100)
+        self.assertEqual(result["breakdown"]["experience"], 100)
+        self.assertEqual(result["breakdown"]["contract"], 100)
+        self.assertGreaterEqual(result["score"], 90)
+
+    def test_unspecified_language_is_not_scored_as_a_failure(self):
+        score, details, known = webapp.calculate_language_score("No language level mentioned")
+        self.assertEqual(score, 75)
+        self.assertFalse(known)
+
     def test_invalid_status_is_rejected(self):
         with self.assertRaises(ValueError):
             webapp.save_application(1, "unknown", "")
