@@ -379,6 +379,27 @@
           padding-bottom: 2rem;
         }
       }
+      /* Keep the language selector and selected option in the same gold as Refresh */
+      .hero .language-picker > #languageDropdown,
+      .hero .language-picker > #languageDropdown:focus,
+      .hero .language-picker > #languageDropdown[aria-expanded="true"] {
+        color:#172554 !important;
+        background-color:#fbbf24 !important;
+        border-color:#fde68a !important;
+      }
+      .hero .language-picker .dropdown-menu .dropdown-item.active,
+      .hero .language-picker .dropdown-menu .dropdown-item:active,
+      .hero .language-picker .dropdown-menu .dropdown-item.active:hover {
+        color:#172554 !important;
+        background-color:#fbbf24 !important;
+        border:1px solid #d97706 !important;
+        font-weight:800 !important;
+        box-shadow:none !important;
+      }
+      .hero .language-picker .dropdown-menu .dropdown-item:not(.active) {
+        color:#1e293b !important;
+        background-color:#fff !important;
+      }
     </style>
   </head>
   <body>
