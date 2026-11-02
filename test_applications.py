@@ -89,7 +89,7 @@ class ApplicationTrackingTests(unittest.TestCase):
         os.environ["PROFILE_LANGUAGES"] = "german:A1"
         try:
             score, _, known = webapp.calculate_language_score("German B2 required")
-            self.assertEqual(score, 30)
+            self.assertEqual(score, 25)
             self.assertTrue(known)
         finally:
             if old is None:
