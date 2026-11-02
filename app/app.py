@@ -312,8 +312,9 @@ def calculate_experience_score(job):
         required = min(years)
         score = 100 if required <= profile_years else max(0, 100 - (required - profile_years) * 30)
         return round(score), f"Experiencia solicitada: {required:g} años; perfil configurado: {profile_years:g}", True
-    if re.search(r"\b(senior|principal|staff engineer|lead engineer|head of)\b", text):
-        return 10, "El anuncio parece orientado a un perfil senior", True
+    title = (job.get("title") or "").lower()
+    if re.search(r"\b(senior|principal|staff engineer|lead engineer|head of)\b", title):
+        return 10, "El título parece orientado a un perfil senior", True
     if re.search(r"\b(intern|internship|praktikum|stage|trainee|graduate|junior|entry.level|apprentice)\b", text):
         return 100, "El anuncio menciona prácticas o nivel inicial", True
     if re.search(r"\b(mid.level|intermediate)\b", text):
@@ -468,7 +469,7 @@ def load_applications(status_filter=None):
         aggregate = "STRING_AGG(skills.name, ', ')" if is_postgres else "GROUP_CONCAT(skills.name, ', ')"
         sql = f"""
             SELECT jobs.id AS job_id, jobs.title, jobs.company, jobs.location,
-                   jobs.redirect_url, jobs.created, jobs.contract_type, applications.status,
+                   jobs.redirect_url, jobs.created, jobs.contract_type, jobs.description, applications.status,
                    applications.notes, applications.created_at,
                    applications.updated_at, applications.applied_at,
                    COALESCE({aggregate}, '') AS skills
