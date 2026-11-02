@@ -372,6 +372,50 @@ def calculate_job_match(job):
 
 
 def ensure_applications_table(conn, is_postgres):
+    if is_postgres:
+        # The managed PostgreSQL database starts empty. Create the core job
+        # tables before creating applications, whose foreign key references jobs.
+        cur = conn.cursor()
+        cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS jobs (
+                id SERIAL PRIMARY KEY,
+                adzuna_id TEXT UNIQUE NOT NULL,
+                title TEXT,
+                company TEXT,
+                location TEXT,
+                salary_min DOUBLE PRECISION,
+                salary_max DOUBLE PRECISION,
+                contract_type TEXT,
+                created TEXT,
+                redirect_url TEXT,
+                description TEXT
+            );
+            CREATE TABLE IF NOT EXISTS skills (
+                id SERIAL PRIMARY KEY,
+                name TEXT UNIQUE NOT NULL
+            );
+            CREATE TABLE IF NOT EXISTS job_skills (
+                job_id INTEGER NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+                skill_id INTEGER NOT NULL REFERENCES skills(id) ON DELETE CASCADE,
+                PRIMARY KEY (job_id, skill_id)
+            );
+            CREATE TABLE IF NOT EXISTS applications (
+                job_id INTEGER PRIMARY KEY REFERENCES jobs(id) ON DELETE CASCADE,
+                status TEXT NOT NULL CHECK (
+                    status IN ('saved', 'applied', 'interview', 'offer', 'rejected', 'archived')
+                ),
+                notes TEXT NOT NULL DEFAULT '',
+                created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                applied_at TIMESTAMP NULL
+            );
+            """
+        )
+        conn.commit()
+        cur.close()
+        return
+
     sql = """
         CREATE TABLE IF NOT EXISTS applications (
             job_id INTEGER PRIMARY KEY REFERENCES jobs(id) ON DELETE CASCADE,
@@ -384,14 +428,8 @@ def ensure_applications_table(conn, is_postgres):
             applied_at TIMESTAMP NULL
         )
     """
-    if is_postgres:
-        cur = conn.cursor()
-        cur.execute(sql)
-        conn.commit()
-        cur.close()
-    else:
-        conn.execute(sql)
-        conn.commit()
+    conn.execute(sql)
+    conn.commit()
 
 
 def get_app_database():
