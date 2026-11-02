@@ -701,8 +701,8 @@ def run_refresh():
         error_detail = (result.stderr or result.stdout or "Unknown error").strip()
         # Adzuna credentials are query parameters; never persist them in server logs.
         error_detail = re.sub(
-            r"([?&](?:app_key|app_id)=)[^&\\s]+",
-            r"\\1[REDACTED]",
+            r"([?&](?:app_key|app_id)=)[^&\s]+",
+            r"\1[REDACTED]",
             error_detail,
             flags=re.IGNORECASE,
         )
