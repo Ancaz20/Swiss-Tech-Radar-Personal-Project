@@ -2,6 +2,39 @@
 <html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Mi Despensa</title>
 <style>
 :root{color-scheme:dark;--bg:#1a0f2e;--panel:#2a1a3e;--purple:#6b2c91;--gold:#d4af37;--muted:#b8abc5}*{box-sizing:border-box}body{margin:0;padding:22px;font-family:system-ui,Segoe UI,sans-serif;background:linear-gradient(135deg,#1a0f2e,#3d1a5c,#2a1a3e);color:#f7f3fa}main{max-width:1200px;margin:auto}.workspace{display:grid;grid-template-columns:minmax(0,1fr) 310px;gap:18px;align-items:start}.mainColumn,.sideColumn{min-width:0}.listsGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:start}.listPanel{border-radius:14px;padding:16px;margin:16px 0;min-width:0}.shoppingPanel{background:linear-gradient(145deg,rgba(55,35,76,.98),rgba(38,25,57,.98));border:1px solid #a978d1}.pantryPanel{background:#fff;border:1px solid #cbd5d0;color:#242b29}.pantryPanel .muted{color:#626d68}.pantryPanel .listCount{background:#edf3ef;color:#34463d;border:1px solid #d5e2da}.pantryPanel h2{color:#285b45}.pantryPanel .item{background:#f4f7f5;border-color:#d5e2da;color:#242b29}.pantryPanel .item h3{color:#25352d}.pantryPanel .item .muted{color:#5d6962}.pantryPanel .secondary{color:#5b3b72;border-color:#8c6ba3}.listPanelHeader{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}.listPanelHeader h2{margin:0 0 8px}.pantryPanel h2{color:#9ce0bd}.shoppingPanel h2{color:#d8b4f4}.listCount{font-size:.85rem;padding:5px 9px;border-radius:20px;background:#21152f}.listPanel .toolbar{margin:10px 0}.listPanel .toolbar input{min-width:100px}.listPanel .item{background:rgba(20,15,32,.5);border-color:#76508e}.pantryPanel .item{border-color:#4c8a70}.utilityPanel{margin-top:8px}.sideColumn{position:sticky;top:18px}.sideCard{background:rgba(42,26,62,.95);border:1px solid var(--purple);border-radius:12px;padding:14px;margin:16px 0}.sideToggle{width:100%;display:flex;justify-content:space-between;align-items:center;text-align:left;font-weight:650}.sideContent{padding-top:10px}.sideContent[hidden]{display:none}.sideCard h2{font-size:1.05rem;margin:4px 0 10px}.sideCard .toolbar{flex-direction:column}.sideCard .toolbar input,.sideCard .toolbar button{width:100%;min-width:0}.sideCard p{line-height:1.45}@media(max-width:1050px){.listsGrid{grid-template-columns:1fr}}@media(max-width:820px){.workspace{grid-template-columns:1fr}.sideColumn{position:static}.sideColumn{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}.sideCard{margin:8px 0}}header{display:flex;justify-content:space-between;align-items:center;gap:15px;flex-wrap:wrap;position:relative}.headerActions{display:flex;align-items:center;gap:10px}.accountMenu{position:absolute;right:0;top:calc(100% + 8px);z-index:20;width:min(360px,calc(100vw - 28px));box-shadow:0 14px 35px #0008}.accountToggle{background:#5d267d;border-color:var(--gold);white-space:nowrap}.addToggle{display:flex;align-items:center;justify-content:space-between;width:100%;font-weight:650}.addToggle span:last-child{font-size:1.25rem}.addForm{margin-top:14px}.addForm[hidden]{display:none}h1,h2{color:var(--gold)}.panel,.item{background:rgba(42,26,62,.95);border:1px solid var(--purple);border-radius:12px;padding:18px;margin:16px 0}.form{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px}input,select,button{font:inherit;padding:11px;border-radius:8px;border:1px solid #76508e;background:#21152f;color:white;min-width:0}button{cursor:pointer;background:#5d267d}button:hover{filter:brightness(1.2)}button:disabled{opacity:.55;cursor:wait}.secondary{background:transparent;border-color:var(--gold);color:var(--gold)}.danger{background:#852f4c}.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.toolbar input{flex:1;min-width:180px}.stats{display:flex;gap:12px;flex-wrap:wrap;color:var(--gold)}.listTabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}.listTabs button.active{background:var(--gold);color:#241832;border-color:var(--gold);font-weight:700}.listHeading{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}.listHeading h2{margin:0}.items{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}.item{margin:0}.item h3{margin:0 0 8px}.editForm{margin-top:12px;padding-top:12px;border-top:1px solid #76508e}.editForm[hidden]{display:none}.pantryPanel .editForm{border-color:#d5e2da}.muted{color:var(--muted);font-size:.9rem}.actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px}.actions button{padding:7px 10px}.hidden{display:none!important}a{color:var(--gold)}.status{padding:10px;border-radius:8px;background:#21152f;color:#d9c9e8}.account{display:flex;gap:9px;align-items:center;flex-wrap:wrap}.pill{border:1px solid #76508e;border-radius:30px;padding:6px 10px;font-size:.85rem;color:var(--gold)}@media(max-width:600px){body{padding:12px}.panel{padding:13px}}
+
+/* Accesibilidad: contraste y legibilidad */
+:root{--muted:#e0d5eb}
+body{color:#fff}
+.muted{color:#ded3e8;font-size:.95rem;line-height:1.5}
+h1{color:#ffe08a}
+h2{color:#ffe08a}
+input,select{color:#fff;background:#171020;border-color:#9b79b2}
+input::placeholder{color:#c5b8d0;opacity:1}
+select option{background:#21152f;color:#fff}
+button{color:#fff;border-color:#a78abb;background:#613080;font-weight:600}
+button:hover{filter:brightness(1.18)}
+.secondary{color:#ffe08a;border:1px solid #e2c56a;background:#30203f}
+.danger{background:#9b294b;border-color:#e58aa2;color:#fff}
+.stats{color:#ffe08a;font-weight:650}
+.shoppingPanel{background:#291b3b;border-color:#c69be8}
+.shoppingPanel h2{color:#e6c7ff}
+.shoppingPanel .muted{color:#e5d9ef}
+.shoppingPanel .item{background:#1d1429;border-color:#9c78b7;color:#fff}
+.shoppingPanel .item h3{color:#fff}
+.shoppingPanel .item .muted{color:#e0d5eb}
+.pantryPanel{background:#fff;border-color:#aebdb4;color:#202a24}
+.pantryPanel h2{color:#20563c}
+.pantryPanel .muted,.pantryPanel .item .muted{color:#39483f}
+.pantryPanel .listCount{background:#e8f0eb;color:#243d2e;border-color:#b7c9bd}
+.pantryPanel .item{background:#f3f7f4;border-color:#b9cbbf;color:#202a24}
+.pantryPanel .item h3{color:#202a24}
+.pantryPanel .secondary{background:#fff;color:#51316b;border-color:#76508e}
+.pantryPanel button:not(.secondary):not(.danger){background:#285f45;color:#fff;border-color:#285f45}
+.pantryPanel .danger{background:#9b294b;color:#fff;border-color:#9b294b}
+.sideCard .muted,.panel .muted{color:#ded3e8}
+.pantryPanel .editForm{border-color:#b9cbbf}
+:focus-visible{outline:3px solid #ffd966;outline-offset:2px}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script></head>
 <body><main>
