@@ -1,79 +1,162 @@
 # Swiss Tech Radar
 
-Aplicación Flask para recopilar y consultar ofertas junior de tecnología en Suiza mediante la API de Adzuna. Los datos se guardan en PostgreSQL con Docker Compose o en SQLite durante el desarrollo local.
+**A full-stack personal project for discovering, evaluating and tracking junior technology opportunities in Switzerland.**
 
-## Requisitos
+[Live application](https://swiss-tech-radar.onrender.com) · [Source code](https://github.com/Ancaz20/Swiss-Tech-Radar-Personal-Project)
 
-- Python 3.11 o superior.
-- Docker y Docker Compose (para la ejecución contenerizada).
-- Credenciales de API de Adzuna: `ADZUNA_APP_ID` y `ADZUNA_APP_KEY`.
+Swiss Tech Radar turns job-search data into a practical workflow: collect junior and entry-level technology vacancies, extract technical skills, estimate how closely each role matches a configurable profile, and keep track of applications in one place.
 
-## Ejecutar con Docker Compose
+> Personal project built end-to-end. The live deployment depends on external Adzuna API credentials and service availability; use the local setup below to run your own instance.
 
-1. Copia `app/.env.example` a `app/.env`.
-2. Sustituye todos los valores de ejemplo por credenciales y contraseñas reales. Genera una clave Flask aleatoria; no reutilices los valores del ejemplo.
-3. Desde la carpeta `app`, ejecuta:
+## Product overview
+
+- **Job discovery:** imports Swiss vacancies from the Adzuna API using configurable search terms.
+- **Junior-role filtering:** keeps entry-level, graduate, trainee and junior opportunities while filtering titles that indicate seniority.
+- **Skill extraction:** identifies technologies and keywords in job titles and descriptions.
+- **Profile matching:** calculates an explainable fit estimate across skills, languages, experience and contract type.
+- **Application tracking:** save opportunities, update their status, and keep notes and follow-up details.
+- **Internationalized interface:** Spanish, English, German and French.
+- **Useful job details:** company, location, publication date, salary range when supplied by the source, detected skills and a link to the original listing.
+- **Export:** writes the collected job data and detected skills to CSV.
+
+## Screens and workflow
+
+1. Refresh the listings from the web interface.
+2. Review and sort the opportunities by publication date, location, company or shared skills.
+3. Inspect the compatibility estimate and its factor breakdown.
+4. Open the original listing or translate it.
+5. Save interesting roles and manage their progress in **My Applications**.
+
+The application stores jobs separately from application records, so refreshing job data does not intentionally erase a user's tracking history.
+
+## How the matching works
+
+The compatibility estimate is a transparent heuristic, not a hiring prediction:
+
+| Factor | Weight |
+| --- | ---: |
+| Technical skills | 45% |
+| Languages | 25% |
+| Experience | 20% |
+| Contract type | 10% |
+
+The score includes a breakdown and a confidence indicator showing how much information could be identified in the listing. Unspecified requirements receive a neutral estimate rather than automatically being treated as a mismatch.
+
+The profile can be configured with environment variables such as:
+
+- `PROFILE_SKILLS`: comma-separated technical skills.
+- `PROFILE_LANGUAGES`: language levels, for example `spanish:NATIVE,english:C1,french:B1,german:A1`.
+- `PROFILE_EXPERIENCE_YEARS`: years of experience used by the heuristic.
+- `STACK_FOCUS`: optional terms to focus the job search.
+
+## Architecture
+
+```text
+Adzuna Jobs API
+      |
+      v
+Python ingestion pipeline (ingest.py)
+  - query construction
+  - junior/seniority filtering
+  - skill extraction
+  - duplicate-safe persistence
+  - CSV export
+      |
+      v
+SQLite (local) / PostgreSQL (deployed or Docker)
+      |
+      v
+Flask web application (app/app.py)
+  - job listing and sorting
+  - profile matching
+  - application tracking
+  - CSRF-protected form actions
+      |
+      v
+Responsive, multilingual web interface
+```
+
+### Technology
+
+- **Backend:** Python, Flask
+- **Data and persistence:** PostgreSQL, SQLite, SQL
+- **External integration:** Adzuna REST API
+- **Frontend:** server-rendered HTML, Jinja templates, CSS and Bootstrap
+- **Packaging and deployment:** Docker, Docker Compose, Render
+- **Quality:** Python `unittest` suite and GitHub Actions CI
+
+The refresh action currently launches the ingestion script as a bounded subprocess from the Flask application. It has a timeout and a cooldown to limit repeated requests. The ingestion client retries transient HTTP 429 and 5xx responses. This is a deliberately simple pipeline; it is not presented as a distributed or asynchronous job queue.
+
+## Run locally
+
+### Requirements
+
+- Python 3.11+
+- Adzuna API credentials for importing live listings
+- Docker and Docker Compose if you prefer the containerized setup
+
+### Python
+
+From the repository root:
+
+```bash
+python -m venv .venv
+# Windows PowerShell
+.venv\\Scripts\\Activate.ps1
+# macOS / Linux
+source .venv/bin/activate
+
+pip install -r requirements.txt
+python app/app.py
+```
+
+Open [http://localhost:5000](http://localhost:5000).
+
+Without `DATABASE_URL`, the app uses a local SQLite database. Set `ADZUNA_APP_ID` and `ADZUNA_APP_KEY` in your environment before requesting a refresh.
+
+### Docker Compose
+
+1. Copy `app/.env.example` to `app/.env`.
+2. Replace every placeholder with your own credentials and strong secrets.
+3. From the `app` directory, run:
 
 ```bash
 docker compose up --build
 ```
 
-4. Abre http://localhost:5000.
+4. Open [http://localhost:5000](http://localhost:5000).
 
-Docker Compose construye la imagen usando la raíz del repositorio como contexto para incluir tanto la aplicación como `ingest.py` y `schema.sql`. PostgreSQL no publica su puerto al host; la aplicación accede a él por la red interna de Compose.
+Compose starts the Flask service and PostgreSQL. The database is available to the app over the internal Compose network.
 
-## Ejecución local
+## Tests and CI
 
-Desde la raíz del repositorio:
-
-```bash
-python -m venv .venv
-# Windows: .venv\Scripts\Activate.ps1
-# macOS/Linux: source .venv/bin/activate
-pip install -r requirements.txt
-python app/app.py
-```
-
-Sin `DATABASE_URL`, la aplicación y el proceso de ingesta utilizan SQLite en la raíz del repositorio. Define `ADZUNA_APP_ID` y `ADZUNA_APP_KEY` antes de solicitar una actualización. Puedes configurar `STACK_FOCUS` con términos separados por comas.
-
-## Actualizar ofertas
-
-En la interfaz, utiliza el botón **Actualizar ofertas**. La acción usa POST y un token CSRF. También puedes ejecutar la ingesta manualmente desde la raíz:
-
-```bash
-python ingest.py
-```
-
-La ingesta conserva las ofertas existentes y añade las nuevas; no vacía la base de datos antes de consultar la API.
-
-## Pruebas
+Run the automated tests:
 
 ```bash
 python -m unittest discover -v
 ```
 
-## Configuración y seguridad
+GitHub Actions runs the unit tests and builds the Docker image for pushes to `main` and `fix/**` branches and for pull requests targeting `main`.
 
-- No subas `app/.env` ni credenciales al repositorio.
-- En Docker Compose, las variables críticas no tienen contraseñas ni claves secretas predeterminadas: deben definirse en `app/.env`.
-- El servicio PostgreSQL solo es accesible desde la red interna de Docker Compose.
+## Configuration and security
 
-## Compatibilidad con tu perfil
+- Never commit `app/.env`, API keys, database passwords or Flask secrets.
+- Generate a unique `FLASK_SECRET_KEY` for each deployment.
+- The refresh and application-management form actions validate CSRF tokens.
+- The refresh subprocess has a time limit and a minimum interval between requests.
+- Adzuna query credentials are redacted from ingestion error details before they are logged.
+- In Docker Compose, PostgreSQL is not published as a host port; the app uses the private Compose network.
 
-Cada oferta muestra una puntuación orientativa basada en las habilidades detectadas en el anuncio y en `PROFILE_SKILLS`. La lista predeterminada incluye Java, Spring, Python, SQL, PostgreSQL, Docker, AWS, Azure, TypeScript, React y Git. Puedes personalizarla en `app/.env`, separando las tecnologías por comas.
+## Why this project is relevant to product engineering
 
-La puntuación mide coincidencias de tecnologías, no la probabilidad real de conseguir el puesto ni la adecuación completa de experiencia, idioma o permisos de trabajo.
+This project gave me hands-on practice owning a feature across the user interface, server-side logic, external API integration, data processing, persistence, deployment and automated tests. It also forced me to handle imperfect real-world inputs: incomplete job descriptions, missing salary data, duplicate listings, provider errors and requirements written in different languages.
 
-## Seguimiento de candidaturas
+That experience is transferable to a product such as Pedra, where a user-facing feature also depends on reliable pipelines and external services. The domain is different: Swiss Tech Radar does **not** currently implement generative image or video models, an iOS capture app, Swift, Next.js or React. Those are areas I would be excited to learn and contribute to.
 
-- Pulsa **Guardar** en cualquier oferta para añadirla a tu seguimiento.
-- Abre **Mis candidaturas** para revisar las ofertas guardadas.
-- Gestiona el estado: guardada, solicitada, entrevista, oferta recibida, descartada o archivada.
-- Añade notas de contacto, fechas, entrevistas y próximos pasos.
-- Los registros se almacenan en la misma base de datos SQLite o PostgreSQL y permanecen aunque actualices las ofertas.
+## Project status and next steps
 
-La tabla `applications` se crea automáticamente al abrir la aplicación; no hace falta borrar ni recrear la base de datos.
+Swiss Tech Radar is a working personal project with a live deployment and a local Docker setup. Potential next improvements include moving ingestion to a dedicated background worker, adding observability and provider-level integration tests, and expanding the interface with a modern component-based frontend.
 
-La puntuación de compatibilidad combina cuatro factores: tecnologías (45 %), idiomas (25 %), experiencia (20 %) y tipo de contrato (10 %). Cada oferta muestra el desglose y una indicación de cuánta información se ha podido identificar en el anuncio. Los requisitos no especificados reciben una valoración neutral, no se consideran automáticamente incumplidos.
+---
 
-Configura el perfil en `app/.env` con `PROFILE_LANGUAGES=spanish:NATIVE,english:C1,french:B1,german:A1` y `PROFILE_EXPERIENCE_YEARS=0`. Los niveles admitidos son A1, A2, B1, B2, C1, C2 y NATIVE. La puntuación es una estimación heurística, no una predicción de contratación.
+Built by [Antonio Cazorla González](https://github.com/Ancaz20).
