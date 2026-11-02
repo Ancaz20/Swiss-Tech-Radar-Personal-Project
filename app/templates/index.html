@@ -522,6 +522,7 @@
                   <a href="{{ url_for('index', lang=lang, sort='location') }}" class="btn btn-sm btn-outline-light{% if sort == 'location' %} active{% endif %}">{{ t.sort_location_label }}</a>
                   <a href="{{ url_for('index', lang=lang, sort='company') }}" class="btn btn-sm btn-outline-light{% if sort == 'company' %} active{% endif %}">{{ t.sort_company_label }}</a>
                   <a href="{{ url_for('index', lang=lang, sort='skills') }}" class="btn btn-sm btn-outline-light{% if sort == 'skills' %} active{% endif %}">{{ t.sort_skills_label }}</a>
+                  <a href="{{ url_for('index', lang=lang, sort='match') }}" class="btn btn-sm btn-outline-light{% if sort == 'match' %} active{% endif %}">🏆 {{ t.sort_match_label }}</a>
                 </div>
               </div>
             </div>
@@ -571,6 +572,7 @@
             <thead class="bg-light text-secondary">
               <tr>
                 <th>📌 {{ t.title_label }}</th>
+                <th>🎯 {{ t.match_score_label }}</th>
                 <th>🏢 {{ t.company_label }}</th>
                 <th>📍 {{ t.location_label }}</th>
                 <th>💰 {{ {'es':'Salario','en':'Salary','de':'Gehalt','fr':'Salaire'}.get(lang, 'Salario') }}</th>
@@ -582,7 +584,7 @@
             <tbody>
               {% if not jobs %}
                 <tr>
-                  <td colspan="7" class="text-center py-4 text-muted">{{ t.no_jobs_message }}</td>
+                  <td colspan="8" class="text-center py-4 text-muted">{{ t.no_jobs_message }}</td>
                 </tr>
               {% else %}
                 {% for job in jobs %}
@@ -612,6 +614,10 @@
                       {% if job.matched_skills %}
                         <div class="mt-1">{% for skill in job.matched_skills %}<span class="badge rounded-pill text-bg-success me-1">{{ skill }}</span>{% endfor %}</div>
                       {% endif %}
+                    </td>
+                    <td class="match-score-cell">
+                      <span class="badge rounded-pill {% if job.match_score >= 80 %}text-bg-success{% elif job.match_score >= 60 %}text-bg-primary{% elif job.match_score >= 40 %}text-bg-warning{% else %}text-bg-secondary{% endif %} fs-6">{{ job.match_score }}%</span>
+                      <div class="small text-muted mt-1">{{ job.match_confidence }}% {{ {'es':'datos','en':'data','de':'Daten','fr':'données'}.get(lang, 'datos') }}</div>
                     </td>
                     <td class="col-company">{{ job.company or '—' }}</td>
                     <td class="col-location">{{ job.location or '—' }}</td>
