@@ -468,7 +468,7 @@ def load_applications(status_filter=None):
         aggregate = "STRING_AGG(skills.name, ', ')" if is_postgres else "GROUP_CONCAT(skills.name, ', ')"
         sql = f"""
             SELECT jobs.id AS job_id, jobs.title, jobs.company, jobs.location,
-                   jobs.redirect_url, jobs.created, applications.status,
+                   jobs.redirect_url, jobs.created, jobs.contract_type, applications.status,
                    applications.notes, applications.created_at,
                    applications.updated_at, applications.applied_at,
                    COALESCE({aggregate}, '') AS skills
