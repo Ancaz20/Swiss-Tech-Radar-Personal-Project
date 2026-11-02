@@ -36,18 +36,20 @@ button:hover{filter:brightness(1.18)}
 .pantryPanel .editForm{border-color:#b9cbbf}
 :focus-visible{outline:3px solid #ffd966;outline-offset:2px}
 
-/* Acabado visual coordinado con la paleta morada */
+/* Acabado visual: despensa en gris malva y favoritos dorados */
 body{font-family:Inter,"Segoe UI",system-ui,-apple-system,sans-serif;letter-spacing:.01em}
-.pantryPanel{background:linear-gradient(145deg,#f0e8f8 0%,#e5d8f1 100%);border:1px solid #b99bcf;color:#30213d}
-.pantryPanel h2{color:#573477}
-.pantryPanel .muted,.pantryPanel .item .muted{color:#59476a}
-.pantryPanel .listCount{background:#d9c7e8;color:#42285a;border:1px solid #b99bcf}
-.pantryPanel .item{background:#faf7fd;border:1px solid #cdb8df;color:#30213d;box-shadow:0 2px 7px rgba(57,31,77,.07)}
-.pantryPanel .item h3{color:#38234d}
-.pantryPanel .secondary{background:#eee5f5;color:#51316b;border-color:#9470ad}
-.pantryPanel button:not(.secondary):not(.danger){background:#68418a;color:#fff;border-color:#68418a}
+.pantryPanel{background:linear-gradient(145deg,#e2dce4 0%,#d8d1da 100%);border:1px solid #b9aebb;color:#403844}
+.pantryPanel h2{color:#514653}
+.pantryPanel .muted,.pantryPanel .item .muted{color:#6f6472}
+.pantryPanel .listCount{background:#cec5d0;color:#493f4c;border:1px solid #b9aebb}
+.pantryPanel .item{background:#f2eff3;border:1px solid #c9c0cb;color:#403844;box-shadow:0 2px 7px rgba(50,40,55,.06)}
+.pantryPanel .item h3{color:#463b49}
+.pantryPanel .secondary{background:#e7e1e9;color:#514653;border-color:#a99eac}
+.pantryPanel button:not(.secondary):not(.danger){background:#66596b;color:#fff;border-color:#66596b}
+.pantryPanel .actions button[data-act="fav"]{background:#d4af62;color:#332a36;border-color:#b9954d}
+.pantryPanel .actions button[data-act="fav"]:hover{background:#c9a24f;color:#2d2530}
 .pantryPanel .danger{background:#922f50;color:#fff;border-color:#922f50}
-.pantryPanel .editForm{border-color:#cdb8df}
+.pantryPanel .editForm{border-color:#c9c0cb}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script></head>
 <body><main>
