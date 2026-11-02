@@ -61,9 +61,25 @@
                 </div>
                 <div class="text-md-end">
                   <div class="score">{{ item.match_score }}% de compatibilidad estimada</div>
+                  <span class="badge text-bg-light text-dark">{{ item.match_confidence }}% datos identificados</span>
                   <span class="badge text-bg-secondary">{{ statuses[item.status] }}</span>
                 </div>
               </div>
+              <details class="small mb-3">
+                <summary class="text-primary">Desglose de compatibilidad</summary>
+                <div class="mt-2">
+                  <div>Tecnologías (45%): {{ item.match_breakdown.skills }}/100</div>
+                  <div>Idiomas (25%): {{ item.match_breakdown.languages }}/100</div>
+                  <div>Experiencia (20%): {{ item.match_breakdown.experience }}/100</div>
+                  <div>Contrato (10%): {{ item.match_breakdown.contract }}/100</div>
+                  <ul class="mt-1 ps-3 mb-0">
+                    <li>{{ item.match_details.skills }}</li>
+                    <li>{{ item.match_details.languages }}</li>
+                    <li>{{ item.match_details.experience }}</li>
+                    <li>{{ item.match_details.contract }}</li>
+                  </ul>
+                </div>
+              </details>
               {% if item.matched_skills %}
                 <div class="mb-3">
                   {% for skill in item.matched_skills %}
