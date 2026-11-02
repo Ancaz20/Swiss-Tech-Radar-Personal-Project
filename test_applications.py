@@ -84,6 +84,36 @@ class ApplicationTrackingTests(unittest.TestCase):
         self.assertEqual(result["breakdown"]["contract"], 100)
         self.assertGreaterEqual(result["score"], 80)
 
+    def test_language_requirement_above_profile_reduces_score(self):
+        old = os.environ.get("PROFILE_LANGUAGES")
+        os.environ["PROFILE_LANGUAGES"] = "german:A1"
+        try:
+            score, _, known = webapp.calculate_language_score("German B2 required")
+            self.assertEqual(score, 30)
+            self.assertTrue(known)
+        finally:
+            if old is None:
+                os.environ.pop("PROFILE_LANGUAGES", None)
+            else:
+                os.environ["PROFILE_LANGUAGES"] = old
+
+    def test_years_of_experience_requirement_is_scored(self):
+        old = os.environ.get("PROFILE_EXPERIENCE_YEARS")
+        os.environ["PROFILE_EXPERIENCE_YEARS"] = "1"
+        try:
+            score, detail, known = webapp.calculate_experience_score({
+                "title": "Junior Developer",
+                "description": "Requires 3 years of experience",
+            })
+            self.assertEqual(score, 40)
+            self.assertTrue(known)
+            self.assertIn("3 años", detail)
+        finally:
+            if old is None:
+                os.environ.pop("PROFILE_EXPERIENCE_YEARS", None)
+            else:
+                os.environ["PROFILE_EXPERIENCE_YEARS"] = old
+
     def test_unspecified_language_is_not_scored_as_a_failure(self):
         score, details, known = webapp.calculate_language_score("No language level mentioned")
         self.assertEqual(score, 75)
